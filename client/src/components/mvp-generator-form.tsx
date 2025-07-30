@@ -1,0 +1,375 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { mvpGeneratorSchema, type MvpGeneratorData } from "@shared/schema";
+import { Lightbulb, Loader2, ArrowRight, Sparkles, Target, DollarSign, Calendar } from "lucide-react";
+
+interface MvpPlan {
+  coreFeatures: string[];
+  techStack: {
+    frontend: string;
+    backend: string;
+    database: string;
+    payment?: string;
+    hosting?: string;
+  };
+  monetizationStrategy: string;
+  timeline: {
+    mvp: string;
+    launch: string;
+    growth: string;
+  };
+  estimatedCost: {
+    development: string;
+    monthly: string;
+  };
+  marketAnalysis: {
+    targetMarket: string;
+    competition: string;
+    opportunity: string;
+  };
+  nextSteps: string[];
+}
+
+export function MvpGeneratorForm() {
+  const [generatedPlan, setGeneratedPlan] = useState<MvpPlan | null>(null);
+  const { toast } = useToast();
+
+  const form = useForm<MvpGeneratorData>({
+    resolver: zodResolver(mvpGeneratorSchema),
+    defaultValues: {
+      idea: "",
+      industry: "",
+      targetAudience: "",
+      budget: "",
+    },
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: async (data: MvpGeneratorData) => {
+      const response = await apiRequest("POST", "/api/mvp/generate", data);
+      return response.json();
+    },
+    onSuccess: (plan: MvpPlan) => {
+      setGeneratedPlan(plan);
+      toast({
+        title: "MVP Plan Generated!",
+        description: "Your comprehensive startup plan is ready.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate MVP plan. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: MvpGeneratorData) => {
+    generateMutation.mutate(data);
+  };
+
+  if (generatedPlan) {
+    return (
+      <div className="space-y-8">
+        {/* Generated Plan Display */}
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-primary" />
+              Your MVP Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {/* Core Features */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5 text-primary" />
+                Core Features
+              </h3>
+              <div className="grid gap-3">
+                {generatedPlan.coreFeatures.map((feature, index) => (
+                  <div key={index} className="p-4 bg-muted rounded-lg border-l-4 border-primary">
+                    <p className="font-medium">{feature}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tech Stack */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Recommended Tech Stack</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-4 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Frontend</h4>
+                  <p>{generatedPlan.techStack.frontend}</p>
+                </div>
+                <div className="p-4 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Backend</h4>
+                  <p>{generatedPlan.techStack.backend}</p>
+                </div>
+                <div className="p-4 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Database</h4>
+                  <p>{generatedPlan.techStack.database}</p>
+                </div>
+                <div className="p-4 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Hosting</h4>
+                  <p>{generatedPlan.techStack.hosting}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Monetization Strategy */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-primary" />
+                Monetization Strategy
+              </h3>
+              <div className="p-6 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-lg border">
+                <p className="leading-relaxed">{generatedPlan.monetizationStrategy}</p>
+              </div>
+            </div>
+
+            {/* Timeline */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                Development Timeline
+              </h3>
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="p-4 bg-card rounded-lg border text-center">
+                  <h4 className="font-semibold text-primary mb-2">MVP Development</h4>
+                  <p className="text-2xl font-bold">{generatedPlan.timeline.mvp}</p>
+                </div>
+                <div className="p-4 bg-card rounded-lg border text-center">
+                  <h4 className="font-semibold text-primary mb-2">Market Launch</h4>
+                  <p className="text-2xl font-bold">{generatedPlan.timeline.launch}</p>
+                </div>
+                <div className="p-4 bg-card rounded-lg border text-center">
+                  <h4 className="font-semibold text-primary mb-2">Growth Phase</h4>
+                  <p className="text-2xl font-bold">{generatedPlan.timeline.growth}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Estimated Costs */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Cost Estimation</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="p-6 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Development Cost</h4>
+                  <p className="text-3xl font-bold">{generatedPlan.estimatedCost.development}</p>
+                </div>
+                <div className="p-6 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Monthly Operations</h4>
+                  <p className="text-3xl font-bold">{generatedPlan.estimatedCost.monthly}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Market Analysis */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Market Analysis</h3>
+              <div className="space-y-4">
+                <div className="p-4 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Target Market</h4>
+                  <p>{generatedPlan.marketAnalysis.targetMarket}</p>
+                </div>
+                <div className="p-4 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Competition & Differentiation</h4>
+                  <p>{generatedPlan.marketAnalysis.competition}</p>
+                </div>
+                <div className="p-4 bg-card rounded-lg border">
+                  <h4 className="font-semibold text-primary mb-2">Market Opportunity</h4>
+                  <p>{generatedPlan.marketAnalysis.opportunity}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Steps */}
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Immediate Next Steps</h3>
+              <div className="space-y-3">
+                {generatedPlan.nextSteps.map((step, index) => (
+                  <div key={index} className="flex items-start gap-3 p-4 bg-muted rounded-lg">
+                    <span className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-semibold text-sm">
+                      {index + 1}
+                    </span>
+                    <p className="pt-1">{step}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
+              <Button 
+                onClick={() => setGeneratedPlan(null)}
+                variant="outline"
+                className="flex-1"
+              >
+                Generate Another Plan
+              </Button>
+              <Button 
+                onClick={() => window.print()}
+                className="flex-1"
+              >
+                Export Plan
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <Card className="max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Lightbulb className="w-6 h-6 text-primary" />
+          Generate Your MVP Plan
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="idea"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Startup Idea Description</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe your startup idea in detail. What problem does it solve? Who is your target audience? What makes it unique?"
+                      className="min-h-[120px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="industry"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Industry</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select industry" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="tech">Technology</SelectItem>
+                        <SelectItem value="healthcare">Healthcare</SelectItem>
+                        <SelectItem value="finance">Finance</SelectItem>
+                        <SelectItem value="education">Education</SelectItem>
+                        <SelectItem value="ecommerce">E-commerce</SelectItem>
+                        <SelectItem value="saas">SaaS</SelectItem>
+                        <SelectItem value="marketplace">Marketplace</SelectItem>
+                        <SelectItem value="social">Social Media</SelectItem>
+                        <SelectItem value="gaming">Gaming</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="targetAudience"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Audience</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select target audience" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="consumers">General Consumers</SelectItem>
+                        <SelectItem value="businesses">Small Businesses</SelectItem>
+                        <SelectItem value="enterprise">Enterprise</SelectItem>
+                        <SelectItem value="developers">Developers</SelectItem>
+                        <SelectItem value="students">Students</SelectItem>
+                        <SelectItem value="professionals">Professionals</SelectItem>
+                        <SelectItem value="seniors">Seniors</SelectItem>
+                        <SelectItem value="teens">Teenagers</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="budget"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Budget Range</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select budget range" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="under-10k">Under $10,000</SelectItem>
+                      <SelectItem value="10k-25k">$10,000 - $25,000</SelectItem>
+                      <SelectItem value="25k-50k">$25,000 - $50,000</SelectItem>
+                      <SelectItem value="50k-100k">$50,000 - $100,000</SelectItem>
+                      <SelectItem value="100k-250k">$100,000 - $250,000</SelectItem>
+                      <SelectItem value="250k-500k">$250,000 - $500,000</SelectItem>
+                      <SelectItem value="over-500k">Over $500,000</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              disabled={generateMutation.isPending}
+              className="w-full"
+              size="lg"
+            >
+              {generateMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  Generating Your MVP Plan...
+                </>
+              ) : (
+                <>
+                  Generate MVP Plan
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </>
+              )}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+}
