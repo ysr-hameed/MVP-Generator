@@ -939,4 +939,3 @@ export const getStorage = async (): Promise<IStorage> => {
 };
 
 // Storage instance will be initialized when getStorage() is called
-export { getStorage };
