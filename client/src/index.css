@@ -177,7 +177,7 @@
   }
 
   .metric-card {
-    @apply bg-gradient-to-br from-card to-muted/50 p-6 rounded-xl border border-border;
+    @apply bg-gradient-to-br from-card to-muted p-6 rounded-xl border border-border;
   }
 
   .form-input {
