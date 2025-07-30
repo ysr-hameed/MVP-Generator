@@ -18,57 +18,8 @@ export default function Blog() {
     select: (data: BlogPost[]) => data,
   });
 
-  // Sample blog posts for demonstration
-  const samplePosts: BlogPost[] = [
-    {
-      id: "1",
-      title: "How to Validate Your Startup Idea Before Building an MVP",
-      slug: "validate-startup-idea-before-mvp",
-      excerpt: "Learn proven methods to validate your startup idea using AI tools and market research before investing time and money into development.",
-      content: "",
-      author: "Sarah Johnson",
-      publishedAt: new Date("2024-01-15"),
-      updatedAt: new Date("2024-01-15"),
-      featured: true,
-      metaTitle: "How to Validate Your Startup Idea Before Building an MVP",
-      metaDescription: "Learn proven methods to validate your startup idea using AI tools and market research before investing time and money into development.",
-      keywords: ["startup validation", "MVP", "market research"],
-      imageUrl: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=400",
-    },
-    {
-      id: "2",
-      title: "AI-Powered Business Planning: The Future of Startup Development",
-      slug: "ai-powered-business-planning-future-startup-development",
-      excerpt: "Discover how artificial intelligence is revolutionizing business planning and MVP development for modern entrepreneurs.",
-      content: "",
-      author: "Michael Chen",
-      publishedAt: new Date("2024-01-12"),
-      updatedAt: new Date("2024-01-12"),
-      featured: false,
-      metaTitle: "AI-Powered Business Planning: The Future of Startup Development",
-      metaDescription: "Discover how artificial intelligence is revolutionizing business planning and MVP development for modern entrepreneurs.",
-      keywords: ["AI", "business planning", "startup development"],
-      imageUrl: "https://images.unsplash.com/photo-1555949963-aa79dcee981c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=400",
-    },
-    {
-      id: "3",
-      title: "Essential Metrics Every MVP Should Track From Day One",
-      slug: "essential-metrics-mvp-track-day-one",
-      excerpt: "Learn which key performance indicators and metrics you should monitor to ensure your MVP's success and growth.",
-      content: "",
-      author: "Emily Rodriguez",
-      publishedAt: new Date("2024-01-10"),
-      updatedAt: new Date("2024-01-10"),
-      featured: false,
-      metaTitle: "Essential Metrics Every MVP Should Track From Day One",
-      metaDescription: "Learn which key performance indicators and metrics you should monitor to ensure your MVP's success and growth.",
-      keywords: ["MVP metrics", "KPIs", "startup analytics"],
-      imageUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=400",
-    },
-  ];
-
-  // Use sample posts if no data from API
-  const displayPosts = posts.length > 0 ? posts : samplePosts;
+  // Use only real posts from API
+  const displayPosts = posts;
 
   const filteredPosts = displayPosts.filter(post =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -211,14 +162,20 @@ export default function Blog() {
               </div>
             ) : filteredPosts.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-lg text-muted-foreground">No articles found matching your search.</p>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSearchTerm("")}
-                  className="mt-4"
-                >
-                  Clear Search
-                </Button>
+                {searchTerm ? (
+                  <>
+                    <p className="text-lg text-muted-foreground">No articles found matching your search.</p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSearchTerm("")}
+                      className="mt-4"
+                    >
+                      Clear Search
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-lg text-muted-foreground">No blog posts available yet. Check back soon!</p>
+                )}
               </div>
             ) : (
               <div className="grid md:grid-cols-3 gap-8">
