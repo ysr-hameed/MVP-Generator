@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,35 +7,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Mail, Send, Loader2, TestTube } from "lucide-react";
+import { Mail, Send, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 const emailConfigSchema = z.object({
-  provider: z.enum(["smtp", "sendgrid", "mailgun", "ses"]),
-  smtpHost: z.string().optional(),
-  smtpPort: z.number().optional(),
-  smtpUser: z.string().optional(),
-  smtpPassword: z.string().optional(),
-  smtpSecure: z.boolean().default(true),
-  apiKey: z.string().optional(),
+  smtpHost: z.string().min(1, "SMTP host is required"),
+  smtpPort: z.number().min(1, "SMTP port is required"),
+  smtpUsername: z.string().min(1, "SMTP username is required"),
+  smtpPassword: z.string().min(1, "SMTP password is required"),
+  smtpSecurity: z.enum(["none", "tls", "ssl"]),
   fromEmail: z.string().email("Please enter a valid email"),
   fromName: z.string().min(1, "From name is required"),
   replyToEmail: z.string().email("Please enter a valid email").optional().or(z.literal("")),
-  enabled: z.boolean().default(false),
-  templates: z.object({
-    contactForm: z.object({
-      subject: z.string(),
-      template: z.string(),
-    }),
-    welcome: z.object({
-      subject: z.string(),
-      template: z.string(),
-    }),
-  }),
+  enableNotifications: z.boolean().default(true),
+  contactFormRecipient: z.string().email("Please enter a valid email"),
+  emailSignature: z.string().optional(),
 });
 
 export function EmailConfig() {
@@ -51,29 +40,38 @@ export function EmailConfig() {
   const form = useForm<z.infer<typeof emailConfigSchema>>({
     resolver: zodResolver(emailConfigSchema),
     defaultValues: {
-      provider: emailConfig?.provider || "smtp",
-      smtpHost: emailConfig?.smtpHost || "",
-      smtpPort: emailConfig?.smtpPort || 587,
-      smtpUser: emailConfig?.smtpUser || "",
-      smtpPassword: emailConfig?.smtpPassword || "",
-      smtpSecure: emailConfig?.smtpSecure !== false,
-      apiKey: emailConfig?.apiKey || "",
-      fromEmail: emailConfig?.fromEmail || "",
-      fromName: emailConfig?.fromName || "MVP Generator AI",
-      replyToEmail: emailConfig?.replyToEmail || "",
-      enabled: emailConfig?.enabled || false,
-      templates: {
-        contactForm: {
-          subject: emailConfig?.templates?.contactForm?.subject || "New Contact Form Submission",
-          template: emailConfig?.templates?.contactForm?.template || "You have received a new contact form submission from {{name}} ({{email}}).\n\nMessage:\n{{message}}\n\nReply directly to this email to respond.",
-        },
-        welcome: {
-          subject: emailConfig?.templates?.welcome?.subject || "Welcome to MVP Generator AI",
-          template: emailConfig?.templates?.welcome?.template || "Thank you for joining MVP Generator AI! We're excited to help you transform your ideas into actionable MVP plans.",
-        },
-      },
+      smtpHost: "",
+      smtpPort: 587,
+      smtpUsername: "",
+      smtpPassword: "",
+      smtpSecurity: "tls",
+      fromEmail: "",
+      fromName: "MVP Generator AI",
+      replyToEmail: "",
+      enableNotifications: true,
+      contactFormRecipient: "",
+      emailSignature: "",
     },
   });
+
+  // Update form when data loads
+  useEffect(() => {
+    if (emailConfig) {
+      form.reset({
+        smtpHost: emailConfig.smtpHost || "",
+        smtpPort: emailConfig.smtpPort || 587,
+        smtpUsername: emailConfig.smtpUsername || "",
+        smtpPassword: emailConfig.smtpPassword || "",
+        smtpSecurity: emailConfig.smtpSecurity || "tls",
+        fromEmail: emailConfig.fromEmail || "",
+        fromName: emailConfig.fromName || "MVP Generator AI",
+        replyToEmail: emailConfig.replyToEmail || "",
+        enableNotifications: emailConfig.enableNotifications ?? true,
+        contactFormRecipient: emailConfig.contactFormRecipient || "",
+        emailSignature: emailConfig.emailSignature || "",
+      });
+    }
+  }, [emailConfig, form]);
 
   const updateEmailConfigMutation = useMutation({
     mutationFn: async (data: z.infer<typeof emailConfigSchema>) => {
@@ -150,7 +148,7 @@ export function EmailConfig() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
                 control={form.control}
-                name="enabled"
+                name="enableNotifications"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-600 p-4">
                     <div className="space-y-0.5">
@@ -172,21 +170,20 @@ export function EmailConfig() {
               <div className="grid md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
-                  name="provider"
+                  name="smtpSecurity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Email Provider</FormLabel>
+                      <FormLabel className="text-slate-300">SMTP Security</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
-                            <SelectValue placeholder="Select provider" />
+                            <SelectValue placeholder="Select security" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="smtp">SMTP</SelectItem>
-                          <SelectItem value="sendgrid">SendGrid</SelectItem>
-                          <SelectItem value="mailgun">Mailgun</SelectItem>
-                          <SelectItem value="ses">Amazon SES</SelectItem>
+                          <SelectItem value="none">None</SelectItem>
+                          <SelectItem value="tls">TLS</SelectItem>
+                          <SelectItem value="ssl">SSL</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -247,9 +244,27 @@ export function EmailConfig() {
                     </FormItem>
                   )}
                 />
+
+                 <FormField
+                  control={form.control}
+                  name="contactFormRecipient"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-300">Contact Form Recipient</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="bg-slate-700 border-slate-600 text-white"
+                          placeholder="admin@yoursite.com"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              {form.watch("provider") === "smtp" && (
+
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-white">SMTP Configuration</h3>
                   <div className="grid md:grid-cols-2 gap-4">
@@ -293,7 +308,7 @@ export function EmailConfig() {
 
                     <FormField
                       control={form.control}
-                      name="smtpUser"
+                      name="smtpUsername"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-slate-300">SMTP Username</FormLabel>
@@ -327,134 +342,27 @@ export function EmailConfig() {
                         </FormItem>
                       )}
                     />
+                    </div>
                   </div>
 
-                  <FormField
-                    control={form.control}
-                    name="smtpSecure"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border border-slate-600 p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-slate-300">Use SSL/TLS</FormLabel>
-                          <div className="text-sm text-slate-400">
-                            Enable secure connection to SMTP server
-                          </div>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-
-              {form.watch("provider") !== "smtp" && (
-                <FormField
+               <FormField
                   control={form.control}
-                  name="apiKey"
+                  name="emailSignature"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">API Key</FormLabel>
+                      <FormLabel className="text-slate-300">Email Signature</FormLabel>
                       <FormControl>
-                        <Input
+                        <Textarea
                           {...field}
-                          type="password"
-                          className="bg-slate-700 border-slate-600 text-white"
-                          placeholder="Your API key"
+                          className="bg-slate-700 border-slate-600 text-white font-mono"
+                          placeholder="Your email signature"
+                          rows={4}
                         />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              )}
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Email Templates</h3>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <FormField
-                      control={form.control}
-                      name="templates.contactForm.subject"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-300">Contact Form Subject</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              className="bg-slate-700 border-slate-600 text-white"
-                              placeholder="New Contact Form Submission"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="templates.contactForm.template"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-300">Contact Form Template</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              className="bg-slate-700 border-slate-600 text-white font-mono"
-                              placeholder="Email template with {{name}}, {{email}}, {{message}} variables"
-                              rows={4}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <FormField
-                      control={form.control}
-                      name="templates.welcome.subject"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-300">Welcome Email Subject</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              className="bg-slate-700 border-slate-600 text-white"
-                              placeholder="Welcome to MVP Generator AI"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="templates.welcome.template"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-300">Welcome Email Template</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              className="bg-slate-700 border-slate-600 text-white font-mono"
-                              placeholder="Welcome email template"
-                              rows={4}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              </div>
 
               <div className="flex items-center space-x-4">
                 <Button

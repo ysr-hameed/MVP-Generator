@@ -463,32 +463,6 @@ function GeneralSettings() {
   );
 }
 
-function SiteConfig() {
-  return (
-    <Card className="bg-slate-800 border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-white">Site Configuration</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-slate-400">Here you can configure the site.</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-function SeoSettings() {
-  return (
-    <Card className="bg-slate-800 border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-white">SEO Settings</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-slate-400">Here you can configure SEO settings.</p>
-      </CardContent>
-    </Card>
-  );
-}
-
 function EmailConfig() {
   return (
     <Card className="bg-slate-800 border-slate-700">

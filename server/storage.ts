@@ -216,29 +216,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSetting(key: string): Promise<AdminSetting | undefined> {
-    const [setting] = await this.db
-      .select()
-      .from(adminSettings)
-      .where(eq(adminSettings.key, key));
-    return setting;
+    try {
+      const [setting] = await this.db
+        .select()
+        .from(adminSettings)
+        .where(eq(adminSettings.key, key));
+      return setting;
+    } catch (error) {
+      console.error(`Error getting setting ${key}:`, error);
+      return undefined;
+    }
   }
 
   async setSetting(key: string, value: any): Promise<AdminSetting> {
-    const existing = await this.getSetting(key);
+    try {
+      const existing = await this.getSetting(key);
 
-    if (existing) {
-      const [setting] = await this.db
-        .update(adminSettings)
-        .set({ value, updatedAt: new Date() })
-        .where(eq(adminSettings.key, key))
-        .returning();
-      return setting;
-    } else {
-      const [setting] = await this.db
-        .insert(adminSettings)
-        .values({ key, value })
-        .returning();
-      return setting;
+      if (existing) {
+        const [setting] = await this.db
+          .update(adminSettings)
+          .set({ value, updatedAt: new Date() })
+          .where(eq(adminSettings.key, key))
+          .returning();
+        return setting;
+      } else {
+        const [setting] = await this.db
+          .insert(adminSettings)
+          .values({ key, value })
+          .returning();
+        return setting;
+      }
+    } catch (error) {
+      console.error(`Error setting ${key}:`, error);
+      throw new Error(`Failed to save setting: ${key}`);
     }
   }
 

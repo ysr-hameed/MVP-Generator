@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,32 +7,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Search, Plus, Trash2, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 const seoSettingsSchema = z.object({
-  defaultTitle: z.string().min(1, "Default title is required"),
-  defaultDescription: z.string().min(1, "Default description is required"),
-  defaultKeywords: z.array(z.string()),
-  sitemap: z.boolean().default(true),
+  defaultMetaTitle: z.string().min(1, "Default meta title is required"),
+  defaultMetaDescription: z.string().min(1, "Default meta description is required"),
+  defaultKeywords: z.string().optional(),
+  googleAnalyticsId: z.string().optional(),
+  googleSearchConsoleId: z.string().optional(),
+  bingWebmasterToolsId: z.string().optional(),
+  facebookAppId: z.string().optional(),
+  twitterHandle: z.string().optional(),
+  canonicalUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
   robotsTxt: z.string().optional(),
-  googleAnalytics: z.string().optional(),
-  googleSearchConsole: z.string().optional(),
-  facebookPixel: z.string().optional(),
-  twitterCard: z.string().optional(),
-  openGraph: z.object({
-    title: z.string().optional(),
-    description: z.string().optional(),
-    image: z.string().optional(),
-    type: z.string().default("website"),
-  }),
+  sitemapUrl: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
 });
 
 export function SeoSettings() {
-  const [newKeyword, setNewKeyword] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -44,23 +37,38 @@ export function SeoSettings() {
   const form = useForm<z.infer<typeof seoSettingsSchema>>({
     resolver: zodResolver(seoSettingsSchema),
     defaultValues: {
-      defaultTitle: seoSettings?.defaultTitle || "MVP Generator AI - Transform Ideas into Plans",
-      defaultDescription: seoSettings?.defaultDescription || "Create comprehensive MVP plans with AI assistance. Validate your startup ideas and get actionable development roadmaps.",
-      defaultKeywords: seoSettings?.defaultKeywords || ["MVP", "startup", "business plan", "AI"],
-      sitemap: seoSettings?.sitemap !== false,
-      robotsTxt: seoSettings?.robotsTxt || "",
-      googleAnalytics: seoSettings?.googleAnalytics || "",
-      googleSearchConsole: seoSettings?.googleSearchConsole || "",
-      facebookPixel: seoSettings?.facebookPixel || "",
-      twitterCard: seoSettings?.twitterCard || "summary_large_image",
-      openGraph: {
-        title: seoSettings?.openGraph?.title || "",
-        description: seoSettings?.openGraph?.description || "",
-        image: seoSettings?.openGraph?.image || "",
-        type: seoSettings?.openGraph?.type || "website",
-      },
+      defaultMetaTitle: "MVP Generator AI",
+      defaultMetaDescription: "Transform your ideas into actionable MVP plans",
+      defaultKeywords: "",
+      googleAnalyticsId: "",
+      googleSearchConsoleId: "",
+      bingWebmasterToolsId: "",
+      facebookAppId: "",
+      twitterHandle: "",
+      canonicalUrl: "",
+      robotsTxt: "",
+      sitemapUrl: "",
     },
   });
+
+  // Update form when data loads
+  useEffect(() => {
+    if (seoSettings) {
+      form.reset({
+        defaultMetaTitle: seoSettings.defaultMetaTitle || "MVP Generator AI",
+        defaultMetaDescription: seoSettings.defaultMetaDescription || "Transform your ideas into actionable MVP plans",
+        defaultKeywords: seoSettings.defaultKeywords || "",
+        googleAnalyticsId: seoSettings.googleAnalyticsId || "",
+        googleSearchConsoleId: seoSettings.googleSearchConsoleId || "",
+        bingWebmasterToolsId: seoSettings.bingWebmasterToolsId || "",
+        facebookAppId: seoSettings.facebookAppId || "",
+        twitterHandle: seoSettings.twitterHandle || "",
+        canonicalUrl: seoSettings.canonicalUrl || "",
+        robotsTxt: seoSettings.robotsTxt || "",
+        sitemapUrl: seoSettings.sitemapUrl || "",
+      });
+    }
+  }, [seoSettings, form]);
 
   const updateSeoMutation = useMutation({
     mutationFn: async (data: z.infer<typeof seoSettingsSchema>) => {
@@ -70,7 +78,7 @@ export function SeoSettings() {
     onSuccess: () => {
       toast({
         title: "SEO Settings Updated",
-        description: "Your SEO configuration has been saved successfully.",
+        description: "Your SEO settings have been saved successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/seo-settings"] });
     },
@@ -85,19 +93,6 @@ export function SeoSettings() {
 
   const onSubmit = (data: z.infer<typeof seoSettingsSchema>) => {
     updateSeoMutation.mutate(data);
-  };
-
-  const addKeyword = () => {
-    if (newKeyword.trim()) {
-      const currentKeywords = form.getValues("defaultKeywords") || [];
-      form.setValue("defaultKeywords", [...currentKeywords, newKeyword.trim()]);
-      setNewKeyword("");
-    }
-  };
-
-  const removeKeyword = (index: number) => {
-    const currentKeywords = form.getValues("defaultKeywords") || [];
-    form.setValue("defaultKeywords", currentKeywords.filter((_, i) => i !== index));
   };
 
   if (isLoading) {
@@ -125,15 +120,15 @@ export function SeoSettings() {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="defaultTitle"
+                  name="defaultMetaTitle"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Default Page Title</FormLabel>
+                      <FormLabel className="text-slate-300">Default Meta Title</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
                           className="bg-slate-700 border-slate-600 text-white"
-                          placeholder="Your site's default title"
+                          placeholder="Your site's default meta title"
                         />
                       </FormControl>
                       <FormMessage />
@@ -143,7 +138,7 @@ export function SeoSettings() {
 
                 <FormField
                   control={form.control}
-                  name="defaultDescription"
+                  name="defaultMetaDescription"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-slate-300">Default Meta Description</FormLabel>
@@ -160,37 +155,23 @@ export function SeoSettings() {
                   )}
                 />
 
-                <div className="space-y-4">
-                  <FormLabel className="text-slate-300">Default Keywords</FormLabel>
-                  <div className="flex space-x-2">
-                    <Input
-                      value={newKeyword}
-                      onChange={(e) => setNewKeyword(e.target.value)}
-                      placeholder="Add a keyword"
-                      className="bg-slate-700 border-slate-600 text-white"
-                      onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addKeyword())}
-                    />
-                    <Button type="button" onClick={addKeyword} size="sm">
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {(form.watch("defaultKeywords") || []).map((keyword, index) => (
-                      <Badge key={index} variant="secondary" className="pr-1">
-                        {keyword}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-auto p-1 ml-1"
-                          onClick={() => removeKeyword(index)}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="defaultKeywords"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-slate-300">Default Keywords (comma separated)</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          className="bg-slate-700 border-slate-600 text-white"
+                          placeholder="Keywords for search engines"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="space-y-4">
@@ -198,7 +179,7 @@ export function SeoSettings() {
                 <div className="grid md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="googleAnalytics"
+                    name="googleAnalyticsId"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-slate-300">Google Analytics ID</FormLabel>
@@ -216,15 +197,15 @@ export function SeoSettings() {
 
                   <FormField
                     control={form.control}
-                    name="googleSearchConsole"
+                    name="googleSearchConsoleId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-300">Search Console Verification</FormLabel>
+                        <FormLabel className="text-slate-300">Search Console Verification ID</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             className="bg-slate-700 border-slate-600 text-white"
-                            placeholder="verification code"
+                            placeholder="Verification ID"
                           />
                         </FormControl>
                         <FormMessage />
@@ -234,15 +215,15 @@ export function SeoSettings() {
 
                   <FormField
                     control={form.control}
-                    name="facebookPixel"
+                    name="bingWebmasterToolsId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-300">Facebook Pixel ID</FormLabel>
+                        <FormLabel className="text-slate-300">Bing Webmaster Tools ID</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             className="bg-slate-700 border-slate-600 text-white"
-                            placeholder="Facebook Pixel ID"
+                            placeholder="Verification ID"
                           />
                         </FormControl>
                         <FormMessage />
@@ -252,15 +233,51 @@ export function SeoSettings() {
 
                   <FormField
                     control={form.control}
-                    name="twitterCard"
+                    name="facebookAppId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-300">Twitter Card Type</FormLabel>
+                        <FormLabel className="text-slate-300">Facebook App ID</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             className="bg-slate-700 border-slate-600 text-white"
-                            placeholder="summary_large_image"
+                            placeholder="Facebook App ID"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="twitterHandle"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-300">Twitter Handle</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            className="bg-slate-700 border-slate-600 text-white"
+                            placeholder="@yourtwitterhandle"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="canonicalUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-300">Canonical URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            className="bg-slate-700 border-slate-600 text-white"
+                            placeholder="https://example.com"
                           />
                         </FormControl>
                         <FormMessage />
@@ -268,66 +285,6 @@ export function SeoSettings() {
                     )}
                   />
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-white">Open Graph Settings</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="openGraph.title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-slate-300">OG Title</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="bg-slate-700 border-slate-600 text-white"
-                            placeholder="Open Graph title"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="openGraph.image"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-slate-300">OG Image URL</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            className="bg-slate-700 border-slate-600 text-white"
-                            placeholder="https://example.com/og-image.jpg"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="openGraph.description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-slate-300">OG Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          className="bg-slate-700 border-slate-600 text-white"
-                          placeholder="Open Graph description"
-                          rows={2}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
 
               <FormField
@@ -342,6 +299,24 @@ export function SeoSettings() {
                         className="bg-slate-700 border-slate-600 text-white font-mono"
                         placeholder="User-agent: *&#10;Disallow:"
                         rows={4}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sitemapUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-slate-300">Sitemap URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        className="bg-slate-700 border-slate-600 text-white"
+                        placeholder="https://example.com/sitemap.xml"
                       />
                     </FormControl>
                     <FormMessage />

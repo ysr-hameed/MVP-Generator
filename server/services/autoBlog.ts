@@ -1,4 +1,3 @@
-
 import { geminiService } from "./gemini";
 import { storage } from "../storage";
 
@@ -75,13 +74,13 @@ Return the content in this JSON format:
 
     try {
       const response = await geminiService.generateContent(prompt);
-      
+
       // Parse the JSON response
       const content = JSON.parse(response);
-      
+
       // Add additional humanization touches
       content.content = this.addHumanTouches(content.content, affiliateLinks);
-      
+
       return content;
     } catch (error) {
       console.error("Auto blog generation error:", error);
@@ -113,7 +112,7 @@ Return the content in this JSON format:
     for (let i = 0; i < touchesToAdd; i++) {
       const randomIndex = Math.floor(Math.random() * sentences.length);
       const randomTouch = touches[Math.floor(Math.random() * touches.length)];
-      
+
       if (sentences[randomIndex] && !sentences[randomIndex].includes(randomTouch)) {
         sentences[randomIndex] = `${randomTouch} ${sentences[randomIndex]}`;
       }
@@ -129,9 +128,9 @@ Return the content in this JSON format:
           `\n\n> **Pro Tip**: Check out [${link.text}](${link.url}) for advanced features.\n\n`,
           `\n\nI highly recommend [${link.text}](${link.url}) for this purpose.\n\n`
         ];
-        
+
         const randomPlacement = placements[Math.floor(Math.random() * placements.length)];
-        
+
         // Insert at a random position in the content
         const contentSections = humanizedContent.split('\n\n');
         const insertIndex = Math.floor(contentSections.length * 0.6); // Insert in latter half
@@ -149,37 +148,37 @@ Return the content in this JSON format:
 
   async processQueue(): Promise<void> {
     console.log("Processing auto-blog queue...");
-    
+
     const pendingItems = await storage.getAutoBlogQueue("pending");
-    
+
     for (const item of pendingItems) {
       try {
         await storage.updateAutoBlogQueueStatus(item.id, "processing");
-        
+
         // Get auto-blog settings for affiliate links
         const settings = await storage.getAutoBlogSettings();
         const affiliateLinks = settings?.affiliateLinks as any[] || [];
-        
+
         console.log(`Generating blog post for topic: ${item.topic}`);
-        
+
         const blogContent = await this.generateHumanizedBlogPost(item.topic, affiliateLinks);
-        
+
         // Create the blog post
         const post = await storage.createBlogPost({
           ...blogContent,
           featured: Math.random() > 0.7, // 30% chance of being featured
         });
-        
+
         await storage.updateAutoBlogQueueStatus(item.id, "completed", {
           content: blogContent,
           postId: post.id
         });
-        
+
         console.log(`Successfully generated and published blog post: ${post.title}`);
-        
+
         // Add a small delay between generations
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
       } catch (error) {
         console.error(`Failed to process queue item ${item.id}:`, error);
         await storage.updateAutoBlogQueueStatus(item.id, "failed", {
@@ -190,28 +189,34 @@ Return the content in this JSON format:
   }
 
   async scheduleNextRun(): Promise<void> {
-    const settings = await storage.getAutoBlogSettings();
-    if (!settings?.enabled) return;
+    try {
+      const settings = await storage.getAutoBlogSettings();
+      if (!settings || !settings.enabled) return;
 
-    const now = new Date();
-    let nextRun = new Date(now);
+      const now = new Date();
+      let nextRun = new Date(now);
 
-    switch (settings.frequency) {
-      case "daily":
-        nextRun.setDate(nextRun.getDate() + 1);
-        break;
-      case "weekly":
-        nextRun.setDate(nextRun.getDate() + 7);
-        break;
-      case "monthly":
-        nextRun.setMonth(nextRun.getMonth() + 1);
-        break;
+      switch (settings.frequency) {
+        case "daily":
+          nextRun.setDate(now.getDate() + 1);
+          break;
+        case "weekly":
+          nextRun.setDate(now.getDate() + 7);
+          break;
+        case "monthly":
+          nextRun.setMonth(now.getMonth() + 1);
+          break;
+      }
+
+      await storage.updateAutoBlogSettings({
+        nextRun,
+        lastRun: now,
+      });
+
+      console.log(`Next auto-blog run scheduled for: ${nextRun.toISOString()}`);
+    } catch (error) {
+      console.error("Error scheduling next auto-blog run:", error);
     }
-
-    await storage.updateAutoBlogSettings({
-      lastRun: now,
-      nextRun: nextRun
-    });
   }
 
   async shouldRun(): Promise<boolean> {

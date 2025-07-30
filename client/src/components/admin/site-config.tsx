@@ -100,6 +100,7 @@ export function SiteConfig() {
   });
 
   const onSubmit = (data: z.infer<typeof siteConfigSchema>) => {
+    console.log("Submitting site config:", data);
     updateConfigMutation.mutate(data);
   };
 
