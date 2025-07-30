@@ -1,5 +1,5 @@
 import { autoBlogService } from "./autoBlog";
-import { storage } from "../storage";
+import { getStorage } from "../storage";
 
 class CronJobService {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -55,6 +55,7 @@ class CronJobService {
         console.log("Auto-blog scheduled run triggered");
 
         // Generate and publish blog posts immediately (not just queue)
+        const storage = await getStorage();
         const settings = await storage.getAutoBlogSettings();
         if (settings?.enabled) {
           let postsToGenerate = 1;
@@ -93,7 +94,8 @@ class CronJobService {
                 .replace(/--+/g, '-')
                 .trim();
 
-              // Save as blog post
+              // Save as blog post  
+              const storage = await getStorage();
               await storage.createBlogPost({
                 title: content.title,
                 slug: slug + `-${Date.now()}`,
