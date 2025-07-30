@@ -233,6 +233,7 @@ export function ContentManagement() {
                       <FormControl>
                         <Textarea 
                           {...field} 
+                          value={field.value || ""}
                           rows={3}
                           className="bg-slate-700 border-slate-600 text-white resize-none"
                         />
@@ -282,7 +283,7 @@ export function ContentManagement() {
                       <FormItem>
                         <FormLabel className="text-slate-300">Image URL</FormLabel>
                         <FormControl>
-                          <Input {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          <Input {...field} value={field.value || ""} className="bg-slate-700 border-slate-600 text-white" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -395,38 +396,3 @@ export function ContentManagement() {
     </div>
   );
 }
-const createApiKeyMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/admin/api-keys', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to create API key');
-      }
-
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "API key created successfully",
-      });
-      apiKeyForm.reset();
-      refetch();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create API key",
-        variant: "destructive",
-      });
-    },
-  });
