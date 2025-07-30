@@ -483,8 +483,9 @@ export class MemoryStorage implements IStorage {
   }
 }
 
-// Import db to check if database is available
-import { db } from "./db";
+// Import db and initialize storage
+import { db, initializeDatabase } from "./db";
 
-// Use database storage if available, otherwise use memory storage
-export const storage: IStorage = db ? new DatabaseStorage(db) : new MemoryStorage();
+// Initialize database connection and storage
+const database = initializeDatabase();
+export const storage: IStorage = database ? new DatabaseStorage(database) : new MemoryStorage();
