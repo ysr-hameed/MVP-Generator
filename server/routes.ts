@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const analytics = await storage.getAnalytics();
       res.json(analytics);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Admin analytics error:", error);
       res.status(500).json({ message: "Failed to fetch analytics" });
     }

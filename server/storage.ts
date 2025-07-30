@@ -83,12 +83,12 @@ export class DatabaseStorage implements IStorage {
     // Get summary stats
     const totalViews = analyticsData.length;
     
-    const pageViews = analyticsData.reduce((acc: Record<string, number>, item) => {
+    const pageViews = analyticsData.reduce((acc: Record<string, number>, item: Analytics) => {
       acc[item.page] = (acc[item.page] || 0) + 1;
       return acc;
     }, {});
 
-    const dailyViews = analyticsData.reduce((acc: Record<string, number>, item) => {
+    const dailyViews = analyticsData.reduce((acc: Record<string, number>, item: Analytics) => {
       const date = item.timestamp?.toISOString().split('T')[0] || 'unknown';
       acc[date] = (acc[date] || 0) + 1;
       return acc;

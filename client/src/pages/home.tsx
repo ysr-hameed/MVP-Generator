@@ -36,41 +36,48 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900"></div>
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2MzY2ZjEiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
           
-          <div className="relative container-max section-padding">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="slide-up">
-                <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-6 text-balance">
+          <div className="relative max-w-7xl mx-auto container-padding">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8">
+                <h1 className="heading-xl text-balance">
                   Transform{" "}
                   <span className="text-gradient-primary">Ideas</span>{" "}
                   into{" "}
                   <span className="text-gradient-secondary">MVP Plans</span>
                 </h1>
-                <p className="text-xl text-muted-foreground mb-8 leading-relaxed max-w-2xl">
+                <p className="body-lg text-muted-foreground max-w-2xl">
                   Generate comprehensive startup plans with AI. Get features, tech stacks, monetization strategies, and roadmaps in minutes, not months.
                 </p>
                 
-                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                <div className="flex flex-col sm:flex-row gap-6">
                   <Link href="/mvp-generator">
-                    <Button className="btn-primary group">
+                    <Button 
+                      className="btn-primary group w-full sm:w-auto"
+                      data-testid="button-start-generating"
+                    >
                       Start Generating
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
-                  <Button variant="outline" className="btn-secondary">
+                  <Button 
+                    variant="outline" 
+                    className="btn-secondary w-full sm:w-auto"
+                    data-testid="button-watch-demo"
+                  >
                     Watch Demo
                   </Button>
                 </div>
                 
-                <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
                     <span>Free to use</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
                     <span>No signup required</span>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center gap-2">
                     <CheckCircle className="w-5 h-5 text-green-500" />
                     <span>Instant results</span>
                   </div>

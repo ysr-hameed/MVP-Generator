@@ -16,26 +16,29 @@ export function Navigation() {
   ];
 
   return (
-    <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b">
-      <div className="container-max">
-        <div className="flex items-center justify-between h-16">
+    <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur-md border-b border-border">
+      <div className="max-w-7xl mx-auto container-padding">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center">
-                <Lightbulb className="w-5 h-5 text-white" />
+          <Link href="/" data-testid="link-home-logo">
+            <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+                <Lightbulb className="w-6 h-6 text-white" />
               </div>
-              <span className="font-bold text-xl">MVP Generator AI</span>
+              <span className="font-bold text-xl tracking-tight">MVP Generator AI</span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden md:flex items-center gap-2">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
-                <span className={`text-sm font-medium transition-colors hover:text-primary ${
-                  location === item.href ? "text-primary" : "text-muted-foreground"
-                }`}>
+                <span 
+                  className={`nav-link ${
+                    location === item.href ? "text-primary bg-primary/10" : "text-muted-foreground"
+                  }`}
+                  data-testid={`nav-link-${item.label.toLowerCase()}`}
+                >
                   {item.label}
                 </span>
               </Link>
@@ -43,11 +46,13 @@ export function Navigation() {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             <ModeToggle />
             <div className="hidden md:block">
               <Link href="/mvp-generator">
-                <Button className="btn-primary">Get Started</Button>
+                <Button className="btn-primary" data-testid="button-get-started">
+                  Get Started
+                </Button>
               </Link>
             </div>
             <MobileNav />
