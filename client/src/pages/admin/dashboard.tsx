@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { apiRequest } from "@/lib/queryClient";
 import SEOHead from "@/components/seo-head";
 import { AnalyticsDashboard } from "@/components/admin/analytics-dashboard";
 import { ContentManagement } from "@/components/admin/content-management";
+import { AdvertisementManagement } from "@/components/admin/advertisement-management";
+import { AutoBlogManagement } from "@/components/admin/auto-blog-management";
 import { 
   Shield, 
   LogOut, 
@@ -17,7 +19,9 @@ import {
   Settings, 
   Key,
   Palette,
-  MessageSquare
+  MessageSquare,
+  Monitor,
+  Bot
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -142,7 +146,7 @@ export default function AdminDashboard() {
         {/* Main Content */}
         <div className="container-max section-padding">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 bg-slate-800 border border-slate-700">
+            <TabsList className="grid w-full grid-cols-8 bg-slate-800 border border-slate-700">
               <TabsTrigger 
                 value="analytics" 
                 className="data-[state=active]:bg-primary data-[state=active]:text-white"
@@ -156,6 +160,20 @@ export default function AdminDashboard() {
               >
                 <FileText className="w-4 h-4 mr-2" />
                 Content
+              </TabsTrigger>
+              <TabsTrigger 
+                value="ads"
+                className="data-[state=active]:bg-primary data-[state=active]:text-white"
+              >
+                <Monitor className="w-4 h-4 mr-2" />
+                Ads
+              </TabsTrigger>
+              <TabsTrigger 
+                value="auto-blog"
+                className="data-[state=active]:bg-primary data-[state=active]:text-white"
+              >
+                <Bot className="w-4 h-4 mr-2" />
+                Auto-Blog
               </TabsTrigger>
               <TabsTrigger 
                 value="contacts"
@@ -193,6 +211,14 @@ export default function AdminDashboard() {
 
             <TabsContent value="content" className="space-y-6">
               <ContentManagement />
+            </TabsContent>
+
+            <TabsContent value="ads" className="space-y-6">
+              <AdvertisementManagement />
+            </TabsContent>
+
+            <TabsContent value="auto-blog" className="space-y-6">
+              <AutoBlogManagement />
             </TabsContent>
 
             <TabsContent value="contacts" className="space-y-6">

@@ -76,6 +76,52 @@ export const apiKeys = pgTable("api_keys", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Advertisement management
+export const advertisements = pgTable("advertisements", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: varchar("name").notNull(),
+  adCode: text("ad_code").notNull(),
+  width: integer("width").notNull(),
+  height: integer("height").notNull(),
+  position: varchar("position").notNull(), // header, sidebar, content, footer
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Ad settings for global control
+export const adSettings = pgTable("ad_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adCount: varchar("ad_count").notNull().default("low"), // low, medium, high
+  enableAds: boolean("enable_ads").default(false),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Auto blog generation settings and queue
+export const autoBlogSettings = pgTable("auto_blog_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  enabled: boolean("enabled").default(false),
+  frequency: varchar("frequency").notNull().default("daily"), // daily, weekly, monthly
+  lastRun: timestamp("last_run"),
+  nextRun: timestamp("next_run"),
+  topics: text("topics").array().default(sql`ARRAY[]::text[]`),
+  affiliateLinks: jsonb("affiliate_links"), // {url, text, placement}
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Auto blog generation queue
+export const autoBlogQueue = pgTable("auto_blog_queue", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  topic: text("topic").notNull(),
+  status: varchar("status").notNull().default("pending"), // pending, processing, completed, failed
+  generatedContent: jsonb("generated_content"),
+  publishedPostId: varchar("published_post_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+  error: text("error"),
+});
+
 // Schema definitions for validation
 export const insertAnalyticsSchema = createInsertSchema(analytics).omit({
   id: true,
@@ -108,6 +154,29 @@ export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
   id: true,
   createdAt: true,
   lastReset: true,
+});
+
+export const insertAdvertisementSchema = createInsertSchema(advertisements).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAdSettingsSchema = createInsertSchema(adSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export const insertAutoBlogSettingsSchema = createInsertSchema(autoBlogSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAutoBlogQueueSchema = createInsertSchema(autoBlogQueue).omit({
+  id: true,
+  createdAt: true,
+  processedAt: true,
 });
 
 // MVP Generator form schema
@@ -145,6 +214,18 @@ export type InsertAdminSetting = z.infer<typeof insertAdminSettingSchema>;
 
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+
+export type Advertisement = typeof advertisements.$inferSelect;
+export type InsertAdvertisement = z.infer<typeof insertAdvertisementSchema>;
+
+export type AdSettings = typeof adSettings.$inferSelect;
+export type InsertAdSettings = z.infer<typeof insertAdSettingsSchema>;
+
+export type AutoBlogSettings = typeof autoBlogSettings.$inferSelect;
+export type InsertAutoBlogSettings = z.infer<typeof insertAutoBlogSettingsSchema>;
+
+export type AutoBlogQueue = typeof autoBlogQueue.$inferSelect;
+export type InsertAutoBlogQueue = z.infer<typeof insertAutoBlogQueueSchema>;
 
 export type MvpGeneratorData = z.infer<typeof mvpGeneratorSchema>;
 export type ContactFormData = z.infer<typeof contactFormSchema>;

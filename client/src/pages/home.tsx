@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle, Zap, BarChart3, Clock, Shield, Lightbulb, TrendingUp, Users, Globe } from "lucide-react";
 import SEOHead from "@/components/seo-head";
+import { AdDisplay } from "@/components/ad-display";
 
 export default function Home() {
   const structuredData = {
@@ -29,12 +30,12 @@ export default function Home() {
         title="MVP Generator AI - Transform Ideas into Startup Plans | Prompt to MVP"
         structuredData={structuredData}
       />
-      
+
       <div className="pt-16">
         {/* Hero Section */}
         <section className="min-h-screen flex items-center relative overflow-hidden pt-16">
           <div className="absolute inset-0 bg-background"></div>
-          
+
           <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12">
             <div className="text-center max-w-4xl mx-auto space-y-8">
               <h1 className="hero-font text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-balance">
@@ -44,7 +45,7 @@ export default function Home() {
               <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                 Generate comprehensive startup plans with AI. Get features, tech stacks, monetization strategies, and roadmaps in minutes, not months.
               </p>
-                
+
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
                 <Link href="/mvp-generator">
                   <Button 
@@ -67,7 +68,7 @@ export default function Home() {
                   </Button>
                 </Link>
               </div>
-                
+
               <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-500" />
@@ -97,7 +98,7 @@ export default function Home() {
                 Transform your startup ideas into actionable plans with our AI-powered platform. No more guesswork, just data-driven insights.
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               <div className="feature-card">
                 <div className="feature-icon">
@@ -108,7 +109,7 @@ export default function Home() {
                   Advanced AI analyzes your idea and generates comprehensive MVP plans with market insights, features, and technical recommendations.
                 </p>
               </div>
-              
+
               <div className="feature-card">
                 <div className="feature-icon bg-primary">
                   <BarChart3 className="w-6 h-6 text-white" />
@@ -118,7 +119,7 @@ export default function Home() {
                   Get detailed feature lists, technology stacks, monetization strategies, timelines, and development roadmaps all in one place.
                 </p>
               </div>
-              
+
               <div className="feature-card">
                 <div className="feature-icon bg-primary">
                   <Clock className="w-6 h-6 text-white" />
@@ -143,7 +144,7 @@ export default function Home() {
                 Simple, fast, and effective. Transform your startup idea into a comprehensive plan in three easy steps.
               </p>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               <div className="step-card">
                 <div className="step-number">1</div>
@@ -152,7 +153,7 @@ export default function Home() {
                   Tell us about your startup idea, target audience, industry, and budget. The more details, the better your plan will be.
                 </p>
               </div>
-              
+
               <div className="step-card">
                 <div className="step-number">2</div>
                 <h3 className="text-xl font-semibold mb-4">AI Analysis</h3>
@@ -160,7 +161,7 @@ export default function Home() {
                   Our advanced AI analyzes your idea, researches the market, and generates a comprehensive MVP plan tailored to your needs.
                 </p>
               </div>
-              
+
               <div className="step-card">
                 <div className="step-number">3</div>
                 <h3 className="text-xl font-semibold mb-4">Get Your Plan</h3>
@@ -183,7 +184,7 @@ export default function Home() {
                 <p className="text-xl text-muted-foreground mb-8">
                   Join thousands of entrepreneurs who have successfully launched their startups using our AI-powered MVP planning platform.
                 </p>
-                
+
                 <div className="space-y-6">
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
@@ -194,7 +195,7 @@ export default function Home() {
                       <p className="text-muted-foreground">Validate your idea before investing time and money with data-driven insights and market analysis.</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0 w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
                       <Lightbulb className="w-4 h-4 text-white" />
@@ -204,7 +205,7 @@ export default function Home() {
                       <p className="text-muted-foreground">Get professional-level business planning without hiring expensive consultants or advisors.</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0 w-8 h-8 bg-accent rounded-full flex items-center justify-center">
                       <TrendingUp className="w-4 h-4 text-white" />
@@ -216,7 +217,7 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="relative">
                 <img 
                   src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600" 
@@ -261,7 +262,7 @@ export default function Home() {
             <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
               Join thousands of successful entrepreneurs who started with our AI-powered MVP generator. Your startup journey begins here.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/mvp-generator">
                 <Button className="bg-white text-primary hover:bg-white/90 px-8 py-3 text-lg">
@@ -292,7 +293,7 @@ export default function Home() {
                   <Globe className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-4">Product</h4>
                 <ul className="space-y-2 text-muted-foreground">
@@ -301,7 +302,7 @@ export default function Home() {
                   <li><Link href="/about" className="hover:text-foreground">About</Link></li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-4">Support</h4>
                 <ul className="space-y-2 text-muted-foreground">
@@ -310,7 +311,7 @@ export default function Home() {
                   <li><a href="#" className="hover:text-foreground">FAQ</a></li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-4">Legal</h4>
                 <ul className="space-y-2 text-muted-foreground">
@@ -320,7 +321,7 @@ export default function Home() {
                 </ul>
               </div>
             </div>
-            
+
             <div className="border-t mt-12 pt-8 text-center text-muted-foreground">
               <p>&copy; 2024 MVP Generator AI. All rights reserved.</p>
             </div>

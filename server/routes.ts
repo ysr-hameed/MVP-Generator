@@ -9,6 +9,9 @@ import {
   insertContactSchema,
   insertAdminSettingSchema,
   insertApiKeySchema,
+  insertAdvertisementSchema,
+  insertAdSettingsSchema,
+  insertAutoBlogSettingsSchema,
   mvpGeneratorSchema,
   contactFormSchema
 } from "@shared/schema";
@@ -249,6 +252,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("API key delete error:", error);
       res.status(500).json({ message: "Failed to delete API key" });
+    }
+  });
+
+  // Advertisement management
+  app.get("/api/admin/advertisements", isAuthenticated, async (req, res) => {
+    try {
+      const ads = await storage.getAdvertisements();
+      res.json(ads);
+    } catch (error) {
+      console.error("Ads fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch advertisements" });
+    }
+  });
+
+  app.post("/api/admin/advertisements", isAuthenticated, async (req, res) => {
+    try {
+      const data = insertAdvertisementSchema.parse(req.body);
+      const ad = await storage.createAdvertisement(data);
+      res.json(ad);
+    } catch (error) {
+      console.error("Ad create error:", error);
+      res.status(400).json({ message: "Invalid advertisement data" });
+    }
+  });
+
+  app.put("/api/admin/advertisements/:id", isAuthenticated, async (req, res) => {
+    try {
+      const data = insertAdvertisementSchema.partial().parse(req.body);
+      const ad = await storage.updateAdvertisement(req.params.id, data);
+      res.json(ad);
+    } catch (error) {
+      console.error("Ad update error:", error);
+      res.status(400).json({ message: "Invalid advertisement data" });
+    }
+  });
+
+  app.delete("/api/admin/advertisements/:id", isAuthenticated, async (req, res) => {
+    try {
+      await storage.deleteAdvertisement(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Ad delete error:", error);
+      res.status(500).json({ message: "Failed to delete advertisement" });
+    }
+  });
+
+  // Ad settings
+  app.get("/api/admin/ad-settings", isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getAdSettings();
+      res.json(settings || { adCount: "low", enableAds: false });
+    } catch (error) {
+      console.error("Ad settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch ad settings" });
+    }
+  });
+
+  app.post("/api/admin/ad-settings", isAuthenticated, async (req, res) => {
+    try {
+      const data = insertAdSettingsSchema.parse(req.body);
+      const settings = await storage.updateAdSettings(data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Ad settings update error:", error);
+      res.status(400).json({ message: "Invalid ad settings data" });
+    }
+  });
+
+  // Auto blog management
+  app.get("/api/admin/auto-blog", isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getAutoBlogSettings();
+      const queue = await storage.getAutoBlogQueue();
+      res.json({ settings, queue });
+    } catch (error) {
+      console.error("Auto blog fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch auto blog data" });
+    }
+  });
+
+  app.post("/api/admin/auto-blog/settings", isAuthenticated, async (req, res) => {
+    try {
+      const data = insertAutoBlogSettingsSchema.parse(req.body);
+      const settings = await storage.updateAutoBlogSettings(data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Auto blog settings update error:", error);
+      res.status(400).json({ message: "Invalid auto blog settings" });
+    }
+  });
+
+  app.post("/api/admin/auto-blog/generate", isAuthenticated, async (req, res) => {
+    try {
+      const { topic } = req.body;
+      const queueItem = await storage.createAutoBlogQueueItem({
+        topic,
+        status: "pending",
+      });
+      res.json(queueItem);
+    } catch (error) {
+      console.error("Auto blog generation error:", error);
+      res.status(500).json({ message: "Failed to queue blog generation" });
+    }
+  });
+
+  // Public route to get active ads for display
+  app.get("/api/advertisements", async (req, res) => {
+    try {
+      const adSettings = await storage.getAdSettings();
+      if (!adSettings?.enableAds) {
+        return res.json([]);
+      }
+      
+      const ads = await storage.getAdvertisements();
+      const activeAds = ads.filter(ad => ad.isActive);
+      
+      // Filter by ad count setting
+      let maxAds = 2; // low
+      if (adSettings.adCount === "medium") maxAds = 4;
+      if (adSettings.adCount === "high") maxAds = 6;
+      
+      res.json(activeAds.slice(0, maxAds));
+    } catch (error) {
+      console.error("Public ads fetch error:", error);
+      res.json([]);
     }
   });
 

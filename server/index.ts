@@ -5,7 +5,9 @@ console.log("DATABASE_URL set for PostgreSQL connection");
 import express from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
-import { setupVite } from "./vite";
+import ViteDevServer from "./vite";
+import { initializeDatabase } from "./db";
+import { cronJobService } from "./services/cronJobs";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -26,19 +28,21 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 async function main() {
   const server = await registerRoutes(app);
 
-  // In development, setup Vite
-  if (process.env.NODE_ENV === "development") {
-    await setupVite(app, server);
+  // Use Vite's connect instance as middleware in production
+  if (process.env.NODE_ENV !== "development") {
+    app.use(ViteDevServer);
   }
 
+  const PORT = Number(process.env.PORT) || 5000;
   server.listen(PORT, "0.0.0.0", () => {
-    const logMessage = `Server running on port ${PORT}`;
-    
-    if (process.env.NODE_ENV === "development") {
-      console.log(`${logMessage} (development mode with Vite)`);
-    } else {
-      console.log(`${logMessage} (production mode)`);
-    }
+    const mode = process.env.NODE_ENV === "development" ? " (development mode with Vite)" : "";
+    console.log(`Server running on port ${PORT}${mode}`);
+
+    // Start cron jobs after server is running
+    setTimeout(() => {
+      cronJobService.start();
+      console.log("Cron job service started");
+    }, 2000);
   });
 }
 

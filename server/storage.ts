@@ -5,6 +5,10 @@ import {
   contacts,
   adminSettings,
   apiKeys,
+  advertisements,
+  adSettings,
+  autoBlogSettings,
+  autoBlogQueue,
   type Analytics,
   type InsertAnalytics,
   type MvpGeneration,
@@ -17,6 +21,14 @@ import {
   type InsertAdminSetting,
   type ApiKey,
   type InsertApiKey,
+  type Advertisement,
+  type InsertAdvertisement,
+  type AdSettings,
+  type InsertAdSettings,
+  type AutoBlogSettings,
+  type InsertAutoBlogSettings,
+  type AutoBlogQueue,
+  type InsertAutoBlogQueue,
 } from "@shared/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 
@@ -24,27 +36,27 @@ export interface IStorage {
   // Analytics operations
   trackPageView(data: InsertAnalytics): Promise<Analytics>;
   getAnalytics(dateRange?: { from: Date; to: Date }): Promise<any>;
-  
+
   // MVP Generation operations
   createMvpGeneration(data: InsertMvpGeneration): Promise<MvpGeneration>;
   getMvpGenerations(limit?: number): Promise<MvpGeneration[]>;
-  
+
   // Blog operations
   createBlogPost(data: InsertBlogPost): Promise<BlogPost>;
   updateBlogPost(id: string, data: Partial<InsertBlogPost>): Promise<BlogPost>;
   deleteBlogPost(id: string): Promise<void>;
   getBlogPosts(limit?: number): Promise<BlogPost[]>;
   getBlogPostBySlug(slug: string): Promise<BlogPost | undefined>;
-  
+
   // Contact operations
   createContact(data: InsertContact): Promise<Contact>;
   getContacts(limit?: number): Promise<Contact[]>;
   markContactResponded(id: string): Promise<void>;
-  
+
   // Admin settings operations
   getSetting(key: string): Promise<AdminSetting | undefined>;
   setSetting(key: string, value: any): Promise<AdminSetting>;
-  
+
   // API Keys operations
   getActiveApiKeys(provider: string): Promise<ApiKey[]>;
   createApiKey(data: InsertApiKey): Promise<ApiKey>;
@@ -52,6 +64,21 @@ export interface IStorage {
   deleteApiKey(id: string): Promise<void>;
   incrementApiUsage(id: string): Promise<void>;
   resetDailyUsage(): Promise<void>;
+
+  // Advertisement operations
+  getAdvertisements(): Promise<Advertisement[]>;
+  createAdvertisement(data: InsertAdvertisement): Promise<Advertisement>;
+  updateAdvertisement(id: string, data: Partial<InsertAdvertisement>): Promise<Advertisement>;
+  deleteAdvertisement(id: string): Promise<void>;
+  getAdSettings(): Promise<AdSettings | undefined>;
+  updateAdSettings(data: InsertAdSettings): Promise<AdSettings>;
+
+  // Auto blog operations
+  getAutoBlogSettings(): Promise<AutoBlogSettings | undefined>;
+  updateAutoBlogSettings(data: Partial<InsertAutoBlogSettings>): Promise<AutoBlogSettings>;
+  createAutoBlogQueueItem(data: InsertAutoBlogQueue): Promise<AutoBlogQueue>;
+  getAutoBlogQueue(status?: string): Promise<AutoBlogQueue[]>;
+  updateAutoBlogQueueStatus(id: string, status: string, data?: any): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -70,7 +97,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAnalytics(dateRange?: { from: Date; to: Date }) {
     const baseQuery = this.db.select().from(analytics);
-    
+
     const analyticsData = dateRange
       ? await baseQuery.where(
           and(
@@ -82,7 +109,7 @@ export class DatabaseStorage implements IStorage {
 
     // Get summary stats
     const totalViews = analyticsData.length;
-    
+
     const pageViews = analyticsData.reduce((acc: Record<string, number>, item: Analytics) => {
       acc[item.page] = (acc[item.page] || 0) + 1;
       return acc;
@@ -198,7 +225,7 @@ export class DatabaseStorage implements IStorage {
 
   async setSetting(key: string, value: any): Promise<AdminSetting> {
     const existing = await this.getSetting(key);
-    
+
     if (existing) {
       const [setting] = await this.db
         .update(adminSettings)
@@ -254,12 +281,102 @@ export class DatabaseStorage implements IStorage {
   }
 
   async resetDailyUsage(): Promise<void> {
+    await this.db.update(apiKeys).set({ 
+      dailyUsage: 0, 
+      lastReset: new Date() 
+    });
+  }
+
+  // Advertisement operations
+  async getAdvertisements(): Promise<Advertisement[]> {
+    return await this.db.select().from(advertisements).orderBy(advertisements.createdAt);
+  }
+
+  async createAdvertisement(data: InsertAdvertisement): Promise<Advertisement> {
+    const [result] = await this.db.insert(advertisements).values(data).returning();
+    return result;
+  }
+
+  async updateAdvertisement(id: string, data: Partial<InsertAdvertisement>): Promise<Advertisement> {
+    const [result] = await this.db
+      .update(advertisements)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(advertisements.id, id))
+      .returning();
+    return result;
+  }
+
+  async deleteAdvertisement(id: string): Promise<void> {
+    await this.db.delete(advertisements).where(eq(advertisements.id, id));
+  }
+
+  async getAdSettings(): Promise<AdSettings | undefined> {
+    const [result] = await this.db.select().from(adSettings).limit(1);
+    return result;
+  }
+
+  async updateAdSettings(data: InsertAdSettings): Promise<AdSettings> {
+    const existing = await this.getAdSettings();
+    if (existing) {
+      const [result] = await this.db
+        .update(adSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(adSettings.id, existing.id))
+        .returning();
+      return result;
+    } else {
+      const [result] = await this.db.insert(adSettings).values(data).returning();
+      return result;
+    }
+  }
+
+  // Auto blog operations
+  async getAutoBlogSettings(): Promise<AutoBlogSettings | undefined> {
+    const [result] = await this.db.select().from(autoBlogSettings).limit(1);
+    return result;
+  }
+
+  async updateAutoBlogSettings(data: Partial<InsertAutoBlogSettings>): Promise<AutoBlogSettings> {
+    const existing = await this.getAutoBlogSettings();
+    if (existing) {
+      const [result] = await this.db
+        .update(autoBlogSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(autoBlogSettings.id, existing.id))
+        .returning();
+      return result;
+    } else {
+      const [result] = await this.db.insert(autoBlogSettings).values(data).returning();
+      return result;
+    }
+  }
+
+  async createAutoBlogQueueItem(data: InsertAutoBlogQueue): Promise<AutoBlogQueue> {
+    const [result] = await this.db.insert(autoBlogQueue).values(data).returning();
+    return result;
+  }
+
+  async getAutoBlogQueue(status?: string): Promise<AutoBlogQueue[]> {
+    if (status) {
+      return await this.db.select().from(autoBlogQueue)
+        .where(eq(autoBlogQueue.status, status))
+        .orderBy(autoBlogQueue.createdAt);
+    }
+    return await this.db.select().from(autoBlogQueue).orderBy(autoBlogQueue.createdAt);
+  }
+
+  async updateAutoBlogQueueStatus(id: string, status: string, data?: any): Promise<void> {
+    const updateData: any = { status, processedAt: new Date() };
+    if (data) {
+      if (data.content) updateData.generatedContent = data.content;
+      if (data.postId) updateData.publishedPostId = data.postId;
+      if (data.error) updateData.error = data.error;
+    }
+
     await this.db
-      .update(apiKeys)
-      .set({ 
-        dailyUsage: 0,
-        lastReset: new Date()
-      });
+      .update(autoBlogQueue)
+      .set(updateData)
+      .where(eq(autoBlogQueue.id, id));
   }
 }
 
@@ -269,8 +386,12 @@ export class MemoryStorage implements IStorage {
   private mvpGenerations: MvpGeneration[] = [];
   private blogPosts: BlogPost[] = [];
   private contacts: Contact[] = [];
-  private adminSettings: AdminSetting[] = [];
+  private settings: Map<string, AdminSetting> = new Map();
   private apiKeys: ApiKey[] = [];
+  private advertisements: Advertisement[] = [];
+  private adSettings: AdSettings | undefined;
+  private autoBlogSettings: AutoBlogSettings | undefined;
+  private autoBlogQueue: AutoBlogQueue[] = [];
 
   async trackPageView(data: InsertAnalytics): Promise<Analytics> {
     const analytics: Analytics = {
@@ -361,7 +482,7 @@ export class MemoryStorage implements IStorage {
   async updateBlogPost(id: string, data: Partial<InsertBlogPost>): Promise<BlogPost> {
     const index = this.blogPosts.findIndex(p => p.id === id);
     if (index === -1) throw new Error('Blog post not found');
-    
+
     this.blogPosts[index] = {
       ...this.blogPosts[index],
       ...data,
@@ -412,12 +533,12 @@ export class MemoryStorage implements IStorage {
   }
 
   async getSetting(key: string): Promise<AdminSetting | undefined> {
-    return this.adminSettings.find(s => s.key === key);
+    return this.settings.find(s => s.key === key);
   }
 
   async setSetting(key: string, value: any): Promise<AdminSetting> {
-    let setting = this.adminSettings.find(s => s.key === key);
-    
+    let setting = this.settings.find(s => s.key === key);
+
     if (setting) {
       setting.value = value;
       setting.updatedAt = new Date();
@@ -428,7 +549,7 @@ export class MemoryStorage implements IStorage {
         value,
         updatedAt: new Date(),
       };
-      this.adminSettings.push(setting);
+      this.settings.push(setting);
     }
     return setting;
   }
@@ -456,7 +577,7 @@ export class MemoryStorage implements IStorage {
   async toggleApiKey(id: string, isActive: boolean): Promise<ApiKey> {
     const key = this.apiKeys.find(k => k.id === id);
     if (!key) throw new Error('API key not found');
-    
+
     key.isActive = isActive;
     return key;
   }
@@ -480,6 +601,96 @@ export class MemoryStorage implements IStorage {
       key.dailyUsage = 0;
       key.lastReset = new Date();
     });
+  }
+
+  async getAdvertisements(): Promise<Advertisement[]> {
+    return this.advertisements;
+  }
+
+  async createAdvertisement(data: InsertAdvertisement): Promise<Advertisement> {
+    const advertisement: Advertisement = {
+      id: `ad_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    this.advertisements.push(advertisement);
+    return advertisement;
+  }
+
+  async updateAdvertisement(id: string, data: Partial<InsertAdvertisement>): Promise<Advertisement> {
+    const index = this.advertisements.findIndex(ad => ad.id === id);
+    if (index === -1) throw new Error('Advertisement not found');
+
+    this.advertisements[index] = {
+      ...this.advertisements[index],
+      ...data,
+      updatedAt: new Date(),
+    };
+    return this.advertisements[index];
+  }
+
+  async deleteAdvertisement(id: string): Promise<void> {
+    const index = this.advertisements.findIndex(ad => ad.id === id);
+    if (index !== -1) {
+      this.advertisements.splice(index, 1);
+    }
+  }
+
+  async getAdSettings(): Promise<AdSettings | undefined> {
+    return this.adSettings;
+  }
+
+  async updateAdSettings(data: InsertAdSettings): Promise<AdSettings> {
+    this.adSettings = {
+      id: this.adSettings?.id || `adsettings_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      ...data,
+      updatedAt: new Date(),
+    };
+    return this.adSettings;
+  }
+
+  async getAutoBlogSettings(): Promise<AutoBlogSettings | undefined> {
+    return this.autoBlogSettings;
+  }
+
+  async updateAutoBlogSettings(data: Partial<InsertAutoBlogSettings>): Promise<AutoBlogSettings> {
+    this.autoBlogSettings = {
+      id: this.autoBlogSettings?.id || `autoblogsettings_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      ...data,
+      updatedAt: new Date(),
+    };
+    return this.autoBlogSettings as AutoBlogSettings;
+  }
+
+  async createAutoBlogQueueItem(data: InsertAutoBlogQueue): Promise<AutoBlogQueue> {
+    const item: AutoBlogQueue = {
+      id: `autoblogqueue_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      ...data,
+      createdAt: new Date(),
+      processedAt: null,
+    };
+    this.autoBlogQueue.push(item);
+    return item;
+  }
+
+  async getAutoBlogQueue(status?: string): Promise<AutoBlogQueue[]> {
+    return status
+      ? this.autoBlogQueue.filter(item => item.status === status)
+      : this.autoBlogQueue;
+  }
+
+  async updateAutoBlogQueueStatus(id: string, status: string, data?: any): Promise<void> {
+    const item = this.autoBlogQueue.find(item => item.id === id);
+    if (item) {
+      item.status = status;
+      item.processedAt = new Date();
+      if (data) {
+        if (data.content) item.generatedContent = data.content;
+        if (data.postId) item.publishedPostId = data.postId;
+        if (data.error) item.error = data.error;
+      }
+    }
   }
 }
 
