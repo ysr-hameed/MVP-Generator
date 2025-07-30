@@ -134,12 +134,16 @@ Focus on practical, actionable advice that considers the budget constraints and 
         model: "gemini-1.5-flash",
         contents: prompt,
       });
-      const text = response.text;
+      const text = response.text || "";
 
       // Track API usage
-      const currentApiKey = this.apiKeys[this.currentKeyIndex];
-      const storage = await getStorage();
-      await storage.incrementApiUsage(currentApiKey);
+      if (this.apiKeys[this.currentKeyIndex]) {
+        const storage = await getStorage();
+        const keyData = await storage.getApiKeyByValue(this.apiKeys[this.currentKeyIndex]);
+        if (keyData) {
+          await storage.incrementApiUsage(keyData.id);
+        }
+      }
 
       // Parse JSON response
       const cleanedText = text.replace(/```json\s*|\s*```/g, '').trim();
@@ -149,8 +153,8 @@ Focus on practical, actionable advice that considers the budget constraints and 
     } catch (error: any) {
       console.error("Gemini API error:", error);
 
-      // Try rotating API key if rate limited
-      if (error.message?.includes("quota") || error.message?.includes("limit") || error.message?.includes("429")) {
+      // Try rotating API key if rate limited or service unavailable
+      if (error.message?.includes("quota") || error.message?.includes("limit") || error.message?.includes("429") || error.message?.includes("503") || error.message?.includes("overloaded")) {
         if (this.apiKeys.length > 1) {
           console.log(`API key limit reached, rotating to next key. Current index: ${this.currentKeyIndex}`);
           await this.rotateApiKey();
@@ -161,12 +165,16 @@ Focus on practical, actionable advice that considers the budget constraints and 
               model: "gemini-1.5-flash",
               contents: prompt,
             });
-            const text = response.text;
+            const text = response.text || "";
 
             // Track API usage for retry
-            const currentApiKey = this.apiKeys[this.currentKeyIndex];
-            const storage = await getStorage();
-            await storage.incrementApiUsage(currentApiKey);
+            if (this.apiKeys[this.currentKeyIndex]) {
+              const storage = await getStorage();
+              const keyData = await storage.getApiKeyByValue(this.apiKeys[this.currentKeyIndex]);
+              if (keyData) {
+                await storage.incrementApiUsage(keyData.id);
+              }
+            }
 
             const cleanedText = text.replace(/```json\s*|\s*```/g, '').trim();
             const mvpPlan = JSON.parse(cleanedText) as MvpPlan;
@@ -184,7 +192,10 @@ Focus on practical, actionable advice that considers the budget constraints and 
         }
       }
 
-      throw new Error("Failed to generate MVP plan. Please try again.");
+      // Use fallback MVP generation if AI fails
+      const { generateFallbackMvp } = await import("./fallbackMvp");
+      console.log("Using fallback MVP generation due to AI service issues");
+      return generateFallbackMvp(idea, industry, targetAudience, budget);
     }
   }
 

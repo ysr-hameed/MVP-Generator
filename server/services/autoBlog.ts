@@ -127,8 +127,9 @@ Return the content in this JSON format:
     try {
       const response = await geminiService.generateContent(prompt);
 
-      // Parse the JSON response
-      const content = JSON.parse(response);
+      // Clean and parse the JSON response
+      const cleanedResponse = response.replace(/```json\s*|\s*```/g, '').trim();
+      const content = JSON.parse(cleanedResponse);
 
       // Add additional humanization touches
       content.content = this.addHumanTouches(content.content, affiliateLinks);
