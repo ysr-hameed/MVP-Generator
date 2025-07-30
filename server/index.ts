@@ -5,7 +5,7 @@ console.log("DATABASE_URL set for PostgreSQL connection");
 import express from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
-import ViteDevServer from "./vite";
+import { serveStatic } from "./vite";
 import { initializeDatabase } from "./db";
 import { cronJobService } from "./services/cronJobs";
 
@@ -30,7 +30,7 @@ async function main() {
 
   // Use Vite's connect instance as middleware in production
   if (process.env.NODE_ENV !== "development") {
-    app.use(ViteDevServer);
+    serveStatic(app);
   }
 
   const PORT = Number(process.env.PORT) || 5000;
