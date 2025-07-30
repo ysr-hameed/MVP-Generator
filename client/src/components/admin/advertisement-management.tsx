@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,7 +67,7 @@ export function AdvertisementManagement() {
   });
 
   // Update settings form when data loads
-  React.useEffect(() => {
+  useEffect(() => {
     if (adSettings) {
       settingsForm.reset({
         adCount: adSettings.adCount,
