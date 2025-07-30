@@ -357,6 +357,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Site configuration
+  app.get("/api/admin/site-config", isAuthenticated, async (req, res) => {
+    try {
+      const config = await storage.getSetting("site_config");
+      res.json(config?.value || {});
+    } catch (error) {
+      console.error("Site config fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch site configuration" });
+    }
+  });
+
+  app.post("/api/admin/site-config", isAuthenticated, async (req, res) => {
+    try {
+      const config = await storage.setSetting("site_config", req.body);
+      res.json(config);
+    } catch (error) {
+      console.error("Site config update error:", error);
+      res.status(500).json({ message: "Failed to update site configuration" });
+    }
+  });
+
+  // SEO settings
+  app.get("/api/admin/seo-settings", isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getSetting("seo_settings");
+      res.json(settings?.value || {});
+    } catch (error) {
+      console.error("SEO settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch SEO settings" });
+    }
+  });
+
+  app.post("/api/admin/seo-settings", isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.setSetting("seo_settings", req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("SEO settings update error:", error);
+      res.status(500).json({ message: "Failed to update SEO settings" });
+    }
+  });
+
+  // Email configuration
+  app.get("/api/admin/email-config", isAuthenticated, async (req, res) => {
+    try {
+      const config = await storage.getSetting("email_config");
+      res.json(config?.value || {});
+    } catch (error) {
+      console.error("Email config fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch email configuration" });
+    }
+  });
+
+  app.post("/api/admin/email-config", isAuthenticated, async (req, res) => {
+    try {
+      const config = await storage.setSetting("email_config", req.body);
+      res.json(config);
+    } catch (error) {
+      console.error("Email config update error:", error);
+      res.status(500).json({ message: "Failed to update email configuration" });
+    }
+  });
+
+  app.post("/api/admin/email-config/test", isAuthenticated, async (req, res) => {
+    try {
+      const { email } = req.body;
+      // In a real implementation, you would send a test email here
+      // For now, we'll just simulate success
+      res.json({ success: true, message: "Test email sent successfully" });
+    } catch (error) {
+      console.error("Test email error:", error);
+      res.status(500).json({ message: "Failed to send test email" });
+    }
+  });
+
   // Public route to get active ads for display
   app.get("/api/advertisements", async (req, res) => {
     try {

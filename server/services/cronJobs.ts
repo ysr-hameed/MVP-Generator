@@ -1,4 +1,3 @@
-
 import { autoBlogService } from "./autoBlog";
 import { storage } from "../storage";
 
@@ -8,7 +7,7 @@ class CronJobService {
 
   start() {
     if (this.isRunning) return;
-    
+
     console.log("Starting cron job service...");
     this.isRunning = true;
 
@@ -51,16 +50,16 @@ class CronJobService {
   private async checkAutoBlogTasks() {
     try {
       const shouldRun = await autoBlogService.shouldRun();
-      
+
       if (shouldRun) {
         console.log("Auto-blog scheduled run triggered");
-        
+
         // Queue a random blog post
         await autoBlogService.queueRandomPost();
-        
+
         // Schedule next run
         await autoBlogService.scheduleNextRun();
-        
+
         console.log("Auto-blog task completed, next run scheduled");
       }
     } catch (error) {

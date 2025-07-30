@@ -18,7 +18,7 @@ export const generateToken = (username: string): string => {
   return jwt.sign(
     { username, isAdmin: true },
     JWT_SECRET,
-    { expiresIn: "24h" }
+    { expiresIn: "7d" }
   );
 };
 
@@ -30,13 +30,22 @@ export const verifyToken = (token: string): any => {
   }
 };
 
-export const adminAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+export const adminAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const { username, password } = req.body;
   
   if (username === ADMIN_USER && password === ADMIN_PASS) {
     const token = generateToken(username);
     req.isAuthenticated = true;
     req.user = { username, isAdmin: true };
+    
+    // Store admin session in database
+    const { storage } = await import("../storage");
+    await storage.setSetting('admin_session', {
+      username,
+      token,
+      loginTime: new Date(),
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
+    });
     
     // Set session and return token
     (req.session as any).isAdmin = true;

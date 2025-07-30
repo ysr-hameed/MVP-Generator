@@ -23,11 +23,14 @@ import {
   Monitor,
   Bot
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("analytics");
   const { toast } = useToast();
+  const { isLoggedIn, logout, isLoading: authLoading } = useAuth();
 
   // Logout mutation
   const logoutMutation = useMutation({
@@ -94,7 +97,7 @@ export default function AdminDashboard() {
     }
   }, [authCheck, isLoading, setLocation]);
 
-  if (isLoading) {
+  if (isLoading || authLoading) {
     return (
       <div className="container-max py-8">
         <div className="flex items-center justify-center h-64">
@@ -303,11 +306,11 @@ function ApiKeysManagement() {
         },
         body: JSON.stringify({ apiKey })
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to add API key');
       }
-      
+
       return response.json();
     },
     onSuccess: () => {
@@ -343,7 +346,7 @@ function ApiKeysManagement() {
         <p className="text-slate-400">
           Manage your Gemini API keys for AI-powered MVP generation.
         </p>
-        
+
         {!showAddForm ? (
           <Button 
             className="btn-primary"
@@ -452,6 +455,45 @@ function GeneralSettings() {
             <p className="text-slate-400">Set up email notifications and SMTP settings.</p>
           </div>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SiteConfig() {
+  return (
+    <Card className="bg-slate-800 border-slate-700">
+      <CardHeader>
+        <CardTitle className="text-white">Site Configuration</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-slate-400">Here you can configure the site.</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SeoSettings() {
+  return (
+    <Card className="bg-slate-800 border-slate-700">
+      <CardHeader>
+        <CardTitle className="text-white">SEO Settings</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-slate-400">Here you can configure SEO settings.</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmailConfig() {
+  return (
+    <Card className="bg-slate-800 border-slate-700">
+      <CardHeader>
+        <CardTitle className="text-white">Email Configuration</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-slate-400">Here you can configure email settings.</p>
       </CardContent>
     </Card>
   );
