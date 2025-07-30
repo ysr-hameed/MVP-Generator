@@ -5,7 +5,7 @@ console.log("DATABASE_URL set for PostgreSQL connection");
 import express from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
-import { serveStatic } from "./vite";
+import { setupVite, serveStatic } from "./vite";
 import { initializeDatabase } from "./db";
 import { cronJobService } from "./services/cronJobs";
 
@@ -28,8 +28,10 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 async function main() {
   const server = await registerRoutes(app);
 
-  // Use Vite's connect instance as middleware in production
-  if (process.env.NODE_ENV !== "development") {
+  // Setup Vite middleware for development or static serving for production
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
+  } else {
     serveStatic(app);
   }
 
