@@ -62,7 +62,10 @@ export interface IStorage {
 
   // API Keys operations
   getActiveApiKeys(provider: string): Promise<ApiKey[]>;
-  async getAllApiKeys(provider: string): Promise<ApiKey[]>;
+  getAllApiKeys(provider: string): Promise<ApiKey[]>;
+  getApiKeys(provider: string): Promise<ApiKey[]>;
+  getApiKeyByValue(key: string): Promise<ApiKey | undefined>;
+  updateApiKey(id: string, data: Partial<InsertApiKey>): Promise<ApiKey>;
   createApiKey(data: InsertApiKey): Promise<ApiKey>;
   toggleApiKey(id: string, isActive: boolean): Promise<ApiKey>;
   deleteApiKey(id: string): Promise<void>;
@@ -274,6 +277,28 @@ export class DatabaseStorage implements IStorage {
       .from(apiKeys)
       .where(eq(apiKeys.provider, provider))
       .orderBy(apiKeys.dailyUsage);
+  }
+
+  async getApiKeys(provider: string): Promise<ApiKey[]> {
+    return await this.getAllApiKeys(provider);
+  }
+
+  async getApiKeyByValue(key: string): Promise<ApiKey | undefined> {
+    const [result] = await this.db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.key, key))
+      .limit(1);
+    return result;
+  }
+
+  async updateApiKey(id: string, data: Partial<InsertApiKey>): Promise<ApiKey> {
+    const [result] = await this.db
+      .update(apiKeys)
+      .set(data)
+      .where(eq(apiKeys.id, id))
+      .returning();
+    return result;
   }
 
   async createApiKey(data: InsertApiKey): Promise<ApiKey> {

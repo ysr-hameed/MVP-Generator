@@ -11,6 +11,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { initializeDatabase } from "./db";
 import { cronJobService } from "./services/cronJobs";
+import { ApiKeyManager } from "./services/apiKeyManager";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -43,10 +44,17 @@ async function main() {
     const mode = process.env.NODE_ENV === "development" ? " (development mode with Vite)" : "";
     console.log(`Server running on port ${PORT}${mode}`);
 
-    // Start cron jobs after server is running
-    setTimeout(() => {
-      cronJobService.start();
-      console.log("Cron job service started");
+    // Initialize API keys and start cron jobs after server is running
+    setTimeout(async () => {
+      try {
+        console.log("Starting cron job service...");
+        await ApiKeyManager.initializeFromEnvironment();
+        await ApiKeyManager.resetDailyUsage();
+        cronJobService.start();
+        console.log("Cron job service started");
+      } catch (error) {
+        console.error("Failed to initialize services:", error);
+      }
     }, 2000);
   });
 }
