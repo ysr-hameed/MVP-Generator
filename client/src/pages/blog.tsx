@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Calendar, Clock, ArrowRight, TrendingUp } from "lucide-react";
 import { type BlogPost } from "@shared/schema";
-import { useRouter } from 'next/navigation';
+import { useLocation } from 'wouter';
 
 export default function Blog() {
   const [searchTerm, setSearchTerm] = useState("");
-  const router = useRouter();
+  const [, setLocation] = useLocation();
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ["/api/blog/posts"],
@@ -91,7 +91,7 @@ export default function Blog() {
   };
 
   const handleReadMore = (slug: string) => {
-    router.push(`/blog/${slug}`);
+    setLocation(`/blog/${slug}`);
   };
 
   return (
