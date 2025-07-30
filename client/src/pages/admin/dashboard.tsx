@@ -463,15 +463,3 @@ function GeneralSettings() {
   );
 }
 
-function EmailConfig() {
-  return (
-    <Card className="bg-slate-800 border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-white">Email Configuration</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-slate-400">Here you can configure email settings.</p>
-      </CardContent>
-    </Card>
-  );
-}
