@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { getStorage } from "./storage";
 import { geminiService } from "./services/gemini";
 import { 
   insertAnalyticsSchema,
@@ -57,6 +57,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userAgent: req.get('User-Agent'),
       });
 
+      const storage = await getStorage();
       const analytics = await storage.trackPageView(data);
       res.json(analytics);
     } catch (error) {
@@ -79,6 +80,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Store the generation
+      const storage = await getStorage();
       await storage.createMvpGeneration({
         ...data,
         result: plan,
@@ -99,6 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/contact", async (req, res) => {
     try {
       const data = contactFormSchema.parse(req.body);
+      const storage = await getStorage();
       const contact = await storage.createContact(data);
       res.json(contact);
     } catch (error) {
@@ -110,6 +113,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Blog endpoints
   app.get("/api/blog/posts", async (req, res) => {
     try {
+      const storage = await getStorage();
       const posts = await storage.getBlogPosts();
       res.json(posts);
     } catch (error) {
@@ -120,6 +124,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/blog/posts/:slug", async (req, res) => {
     try {
+      const storage = await getStorage();
       const post = await storage.getBlogPostBySlug(req.params.slug);
       if (!post) {
         return res.status(404).json({ message: "Post not found" });
@@ -150,6 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin analytics
   app.get("/api/admin/analytics", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const analytics = await storage.getAnalytics();
       res.json(analytics);
     } catch (error: unknown) {
@@ -161,6 +167,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin contacts
   app.get("/api/admin/contacts", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const contacts = await storage.getContacts();
       res.json(contacts);
     } catch (error) {
@@ -171,6 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/contacts/:id/respond", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       await storage.markContactResponded(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -183,6 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/blog", isAuthenticated, async (req, res) => {
     try {
       const data = insertBlogPostSchema.parse(req.body);
+      const storage = await getStorage();
       const post = await storage.createBlogPost(data);
       res.json(post);
     } catch (error) {
@@ -194,6 +203,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/blog/:id", isAuthenticated, async (req, res) => {
     try {
       const data = insertBlogPostSchema.partial().parse(req.body);
+      const storage = await getStorage();
       const post = await storage.updateBlogPost(req.params.id, data);
       res.json(post);
     } catch (error) {
@@ -204,6 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/admin/blog/:id", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       await storage.deleteBlogPost(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -215,6 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin API key management
   app.get("/api/admin/api-keys", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const allKeys = await storage.getAllApiKeys("gemini");
       res.json({ gemini: allKeys });
     } catch (error) {
@@ -226,6 +238,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/api-keys", isAuthenticated, async (req, res) => {
     try {
       const data = insertApiKeySchema.parse(req.body);
+      const storage = await getStorage();
       const key = await storage.createApiKey(data);
       // Return without actual key value for security
       res.json({ ...key, key: '***masked***' });
@@ -238,6 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/admin/api-keys/:id/toggle", isAuthenticated, async (req, res) => {
     try {
       const { isActive } = req.body;
+      const storage = await getStorage();
       const key = await storage.toggleApiKey(req.params.id, isActive);
       res.json({ ...key, key: '***masked***' });
     } catch (error) {
@@ -248,6 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/admin/api-keys/:id", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       await storage.deleteApiKey(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -259,6 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Advertisement management
   app.get("/api/admin/advertisements", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const ads = await storage.getAdvertisements();
       res.json(ads);
     } catch (error) {
@@ -270,6 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/advertisements", isAuthenticated, async (req, res) => {
     try {
       const data = insertAdvertisementSchema.parse(req.body);
+      const storage = await getStorage();
       const ad = await storage.createAdvertisement(data);
       res.json(ad);
     } catch (error) {
@@ -281,6 +298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/advertisements/:id", isAuthenticated, async (req, res) => {
     try {
       const data = insertAdvertisementSchema.partial().parse(req.body);
+      const storage = await getStorage();
       const ad = await storage.updateAdvertisement(req.params.id, data);
       res.json(ad);
     } catch (error) {
@@ -291,6 +309,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/admin/advertisements/:id", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       await storage.deleteAdvertisement(req.params.id);
       res.json({ success: true });
     } catch (error) {
@@ -302,6 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Ad settings
   app.get("/api/admin/ad-settings", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const settings = await storage.getAdSettings();
       res.json(settings || { adCount: "low", enableAds: false });
     } catch (error) {
@@ -313,6 +333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/ad-settings", isAuthenticated, async (req, res) => {
     try {
       const data = insertAdSettingsSchema.parse(req.body);
+      const storage = await getStorage();
       const settings = await storage.updateAdSettings(data);
       res.json(settings);
     } catch (error) {
@@ -324,6 +345,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auto blog management
   app.get("/api/admin/auto-blog", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const settings = await storage.getAutoBlogSettings();
       const queue = await storage.getAutoBlogQueue();
       res.json({ settings, queue });
@@ -336,6 +358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/auto-blog/settings", isAuthenticated, async (req, res) => {
     try {
       const data = insertAutoBlogSettingsSchema.parse(req.body);
+      const storage = await getStorage();
       const settings = await storage.updateAutoBlogSettings(data);
       res.json(settings);
     } catch (error) {
@@ -353,6 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const autoBlogService = new AutoBlogService();
 
       // Get auto-blog settings for affiliate links
+      const storage = await getStorage();
       const settings = await storage.getAutoBlogSettings();
       const affiliateLinks = settings?.affiliateLinks ? 
         Array.isArray(settings.affiliateLinks) ? settings.affiliateLinks : [] : [];
@@ -403,6 +427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Site configuration
   app.get("/api/admin/site-config", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const config = await storage.getSetting("site_config");
       res.json(config?.value || {});
     } catch (error) {
@@ -413,6 +438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/site-config", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const config = await storage.setSetting("site_config", req.body);
       res.json(config);
     } catch (error) {
@@ -424,6 +450,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SEO settings
   app.get("/api/admin/seo-settings", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const settings = await storage.getSetting("seo_settings");
       res.json(settings?.value || {});
     } catch (error) {
@@ -434,6 +461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/seo-settings", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const settings = await storage.setSetting("seo_settings", req.body);
       res.json(settings);
     } catch (error) {
@@ -445,6 +473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Email configuration
   app.get("/api/admin/email-config", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const config = await storage.getSetting("email_config");
       res.json(config?.value || {});
     } catch (error) {
@@ -455,6 +484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/email-config", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const config = await storage.setSetting("email_config", req.body);
       res.json(config);
     } catch (error) {
@@ -477,6 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Enhanced Site Settings
   app.get("/api/admin/site-settings", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       const settings = await storage.getSiteSettings();
       res.json(settings || {
         siteName: "MVP Generator AI",
@@ -501,6 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/site-settings", isAuthenticated, async (req, res) => {
     try {
       const data = insertSiteSettingsSchema.parse(req.body);
+      const storage = await getStorage();
       const settings = await storage.updateSiteSettings(data);
       res.json(settings);
     } catch (error) {
@@ -536,6 +568,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import autoBlog service
       const { AutoBlogService } = await import("./services/autoBlog");
       const autoBlogService = new AutoBlogService();
+      const storage = await getStorage();
 
       // Schedule posts immediately
       for (let i = 0; i < Math.min(count, 5); i++) { // Max 5 at once
@@ -557,6 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/seo/meta/:page", async (req, res) => {
     try {
       const { page } = req.params;
+      const storage = await getStorage();
       const siteSettings = await storage.getSiteSettings();
       const seoSettings = siteSettings?.seoSettings as any || {};
 
@@ -602,6 +636,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/contact", async (req, res) => {
     try {
       const data = contactFormSchema.parse(req.body);
+      const storage = await getStorage();
 
       const contact = await storage.createContact(data);
 
@@ -625,6 +660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public route to get active ads for display
   app.get("/api/advertisements", async (req, res) => {
     try {
+      const storage = await getStorage();
       const adSettings = await storage.getAdSettings();
       if (!adSettings?.enableAds) {
         return res.json([]);
@@ -648,6 +684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin settings
   app.get("/api/admin/settings", isAuthenticated, async (req, res) => {
     try {
+      const storage = await getStorage();
       // Get common settings
       const siteTitle = await storage.getSetting("siteTitle");
       const siteDescription = await storage.getSetting("siteDescription");
@@ -667,6 +704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/settings", isAuthenticated, async (req, res) => {
     try {
       const { key, value } = req.body;
+      const storage = await getStorage();
       const setting = await storage.setSetting(key, value);
       res.json(setting);
     } catch (error) {
