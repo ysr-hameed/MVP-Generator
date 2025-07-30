@@ -17,15 +17,15 @@ export function Navigation() {
 
   return (
     <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur-md border-b border-border">
-      <div className="max-w-7xl mx-auto container-padding">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" data-testid="link-home-logo">
             <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
                 <Lightbulb className="w-6 h-6 text-white" />
               </div>
-              <span className="font-bold text-xl tracking-tight">MVP Generator AI</span>
+              <span className="font-bold text-xl tracking-tight text-foreground">StartupPlan</span>
             </div>
           </Link>
 

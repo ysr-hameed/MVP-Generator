@@ -32,69 +32,54 @@ export default function Home() {
       
       <div className="pt-16">
         {/* Hero Section */}
-        <section className="min-h-screen flex items-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900"></div>
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiM2MzY2ZjEiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iNCIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
+        <section className="min-h-screen flex items-center relative overflow-hidden pt-16">
+          <div className="absolute inset-0 bg-background"></div>
           
-          <div className="relative max-w-7xl mx-auto container-padding">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              <div className="space-y-8">
-                <h1 className="heading-xl text-balance">
-                  Transform{" "}
-                  <span className="text-gradient-primary">Ideas</span>{" "}
-                  into{" "}
-                  <span className="text-gradient-secondary">MVP Plans</span>
-                </h1>
-                <p className="body-lg text-muted-foreground max-w-2xl">
-                  Generate comprehensive startup plans with AI. Get features, tech stacks, monetization strategies, and roadmaps in minutes, not months.
-                </p>
+          <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12">
+            <div className="text-center max-w-4xl mx-auto space-y-8">
+              <h1 className="hero-font text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-balance">
+                Transform Ideas into 
+                <span className="block text-primary">Startup Plans</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Generate comprehensive startup plans with AI. Get features, tech stacks, monetization strategies, and roadmaps in minutes, not months.
+              </p>
                 
-                <div className="flex flex-col sm:flex-row gap-6">
-                  <Link href="/mvp-generator">
-                    <Button 
-                      className="btn-primary group w-full sm:w-auto"
-                      data-testid="button-start-generating"
-                    >
-                      Start Generating
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
+              <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                <Link href="/mvp-generator">
+                  <Button 
+                    className="btn-primary group w-full sm:w-auto"
+                    data-testid="button-start-generating"
+                    size="lg"
+                  >
+                    Start Generating
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link href="/about">
                   <Button 
                     variant="outline" 
                     className="btn-secondary w-full sm:w-auto"
-                    data-testid="button-watch-demo"
+                    data-testid="button-learn-more"
+                    size="lg"
                   >
-                    Watch Demo
+                    Learn More
                   </Button>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Free to use</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>No signup required</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <span>Instant results</span>
-                  </div>
-                </div>
+                </Link>
               </div>
-              
-              <div className="relative float">
-                <img 
-                  src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=600" 
-                  alt="Modern startup workspace with laptops and planning materials" 
-                  className="rounded-2xl shadow-2xl w-full"
-                />
-                <div className="absolute -bottom-6 -right-6 bg-card p-6 rounded-xl shadow-lg glass-effect border">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-sm font-medium">AI Processing...</span>
-                  </div>
+                
+              <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span>Free to use</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span>No signup required</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span>Instant results</span>
                 </div>
               </div>
             </div>
@@ -102,8 +87,8 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section className="section-padding bg-muted/50">
-          <div className="container-max">
+        <section className="section-padding bg-muted">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">
                 Why Choose MVP Generator AI?
@@ -125,7 +110,7 @@ export default function Home() {
               </div>
               
               <div className="feature-card">
-                <div className="feature-icon gradient-secondary">
+                <div className="feature-icon bg-primary">
                   <BarChart3 className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Comprehensive Plans</h3>
@@ -135,7 +120,7 @@ export default function Home() {
               </div>
               
               <div className="feature-card">
-                <div className="feature-icon gradient-accent">
+                <div className="feature-icon bg-primary">
                   <Clock className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Instant Results</h3>
