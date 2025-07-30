@@ -39,7 +39,8 @@ export const adminAuth = async (req: AuthenticatedRequest, res: Response, next: 
     req.user = { username, isAdmin: true };
     
     // Store admin session in database
-    const { storage } = await import("../storage");
+    const { getStorage } = await import("../storage");
+    const storage = await getStorage();
     await storage.setSetting('admin_session', {
       username,
       token,
