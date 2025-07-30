@@ -62,6 +62,7 @@ export interface IStorage {
 
   // API Keys operations
   getActiveApiKeys(provider: string): Promise<ApiKey[]>;
+  async getAllApiKeys(provider: string): Promise<ApiKey[]>;
   createApiKey(data: InsertApiKey): Promise<ApiKey>;
   toggleApiKey(id: string, isActive: boolean): Promise<ApiKey>;
   deleteApiKey(id: string): Promise<void>;
@@ -82,7 +83,7 @@ export interface IStorage {
   createAutoBlogQueueItem(data: InsertAutoBlogQueue): Promise<AutoBlogQueue>;
   getAutoBlogQueue(status?: string): Promise<AutoBlogQueue[]>;
   updateAutoBlogQueueStatus(id: string, status: string, data?: any): Promise<void>;
-  
+
   // Site settings operations
   getSiteSettings(): Promise<SiteSettings | undefined>;
   updateSiteSettings(data: Partial<InsertSiteSettings>): Promise<SiteSettings>;
@@ -267,6 +268,14 @@ export class DatabaseStorage implements IStorage {
       .orderBy(apiKeys.dailyUsage); // Rotate to least used
   }
 
+  async getAllApiKeys(provider: string): Promise<ApiKey[]> {
+    return await this.db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.provider, provider))
+      .orderBy(apiKeys.dailyUsage);
+  }
+
   async createApiKey(data: InsertApiKey): Promise<ApiKey> {
     const [key] = await this.db
       .insert(apiKeys)
@@ -403,7 +412,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateSiteSettings(data: Partial<InsertSiteSettings>): Promise<SiteSettings> {
     const existing = await this.getSiteSettings();
-    
+
     if (existing) {
       const [result] = await this.db
         .update(siteSettings)
@@ -597,6 +606,10 @@ export class MemoryStorage implements IStorage {
     return this.apiKeys
       .filter(k => k.provider === provider && k.isActive)
       .sort((a, b) => (a.dailyUsage || 0) - (b.dailyUsage || 0));
+  }
+
+  async getAllApiKeys(provider: string): Promise<ApiKey[]> {
+    return this.apiKeys.filter(k => k.provider === provider);
   }
 
   async createApiKey(data: InsertApiKey): Promise<ApiKey> {
@@ -800,7 +813,7 @@ class EnhancedStorage extends MemoryStorage {
 
   private initializeDefaults() {
     console.log("Initializing enhanced storage with defaults...");
-    
+
     // Ensure default auto blog settings exist
     if (!this.autoBlogSettings) {
       this.updateAutoBlogSettings({
@@ -824,7 +837,7 @@ class EnhancedStorage extends MemoryStorage {
         maxMvpGenerationsPerDay: 10
       });
     }
-    
+
     console.log("Enhanced storage initialized with defaults");
   }
 
@@ -878,7 +891,7 @@ class EnhancedStorage extends MemoryStorage {
 
   // Clear cache when data is updated
   async createBlogPost(data: InsertBlogPost): Promise<BlogPost> {
-    // Clear blog posts cache when new post is created
+    // Clear blogposts cache when new post is created
     Array.from(this.cache.keys()).forEach(key => {
       if (key.startsWith("blog_posts_")) {
         this.cache.delete(key);

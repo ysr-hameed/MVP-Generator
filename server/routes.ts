@@ -215,8 +215,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin API key management
   app.get("/api/admin/api-keys", isAuthenticated, async (req, res) => {
     try {
-      const geminiKeys = await storage.getActiveApiKeys("gemini");
-      res.json({ gemini: geminiKeys });
+      const allKeys = await storage.getAllApiKeys("gemini");
+      res.json({ gemini: allKeys });
     } catch (error) {
       console.error("API keys fetch error:", error);
       res.status(500).json({ message: "Failed to fetch API keys" });
