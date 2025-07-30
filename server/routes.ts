@@ -347,16 +347,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/auto-blog/generate", isAuthenticated, async (req, res) => {
     try {
       const { topic } = req.body;
-      
+
       // Import autoBlog service and generate immediately
       const { AutoBlogService } = await import("./services/autoBlog");
       const autoBlogService = new AutoBlogService();
-      
+
       // Get auto-blog settings for affiliate links
       const settings = await storage.getAutoBlogSettings();
       const affiliateLinks = settings?.affiliateLinks ? 
         Array.isArray(settings.affiliateLinks) ? settings.affiliateLinks : [] : [];
-      
+
       // Generate the blog post content immediately
       const content = await autoBlogService.generateHumanizedBlogPost(
         topic,

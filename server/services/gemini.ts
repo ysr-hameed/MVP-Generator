@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { storage } from "../storage";
+import { getStorage } from "../storage";
 
 interface MvpPlan {
   coreFeatures: string[];
@@ -39,6 +39,7 @@ export class GeminiService {
 
   private async initializeApiKeys() {
     try {
+      const storage = await getStorage();
       const keys = await storage.getActiveApiKeys("gemini");
       this.apiKeys = keys.map(k => k.key);
 
@@ -66,6 +67,7 @@ export class GeminiService {
       const apiKey = this.apiKeys[this.currentKeyIndex];
 
       // Check if this key has exceeded daily limits
+      const storage = await getStorage();
       const keyData = await storage.getApiKeyByValue(apiKey);
       if (keyData && keyData.dailyUsage < 50) { // Assuming 50 requests per day limit for free tier
         this.genAI = new GoogleGenAI({ apiKey: apiKey });
@@ -136,6 +138,7 @@ Focus on practical, actionable advice that considers the budget constraints and 
 
       // Track API usage
       const currentApiKey = this.apiKeys[this.currentKeyIndex];
+      const storage = await getStorage();
       await storage.incrementApiUsage(currentApiKey);
 
       // Parse JSON response
@@ -162,6 +165,7 @@ Focus on practical, actionable advice that considers the budget constraints and 
 
             // Track API usage for retry
             const currentApiKey = this.apiKeys[this.currentKeyIndex];
+            const storage = await getStorage();
             await storage.incrementApiUsage(currentApiKey);
 
             const cleanedText = text.replace(/```json\s*|\s*```/g, '').trim();
@@ -185,17 +189,19 @@ Focus on practical, actionable advice that considers the budget constraints and 
   }
 
   async generateContent(prompt: string): Promise<string> {
-    async function getActiveApiKey(): Promise<string | null> {
+    async function getNextApiKey(): Promise<string | null> {
       try {
         const storage = await getStorage();
-        const keys = await storage.getActiveApiKeys("gemini");
-        if (keys.length === 0) {
+        const activeKeys = await storage.getActiveApiKeys("gemini");
+        if (activeKeys.length === 0) {
           console.warn("No active Gemini API keys found");
           return null;
         }
 
         // Return the key with lowest usage (rotation)
-        const selectedKey = keys[0];
+        const selectedKey = activeKeys[0];
+        const storage = await getStorage();
+        // Increment usage for this key
         await storage.incrementApiUsage(selectedKey.id);
         return selectedKey.key;
       } catch (error) {
@@ -203,7 +209,7 @@ Focus on practical, actionable advice that considers the budget constraints and 
         return null;
       }
     }
-    const apiKey = await getActiveApiKey();
+    const apiKey = await getNextApiKey();
     if (!apiKey) {
       throw new Error("No active Gemini API key found");
     }

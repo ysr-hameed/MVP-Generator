@@ -170,8 +170,15 @@ async function createTablesIfNotExist(database: any) {
       );`
     ];
 
+    // Execute each table creation query
     for (const query of tableQueries) {
-      await database.execute(query);
+      try {
+        await database.execute(query);
+        console.log(`✓ Table created/verified`);
+      } catch (error) {
+        console.error(`Error executing query: ${query.substring(0, 50)}...`, error);
+        throw error;
+      }
     }
 
     console.log("Database tables created successfully");

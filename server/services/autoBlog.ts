@@ -1,5 +1,5 @@
 import { geminiService } from "./gemini";
-import { storage } from "../storage";
+import { getStorage } from "../storage";
 
 export class AutoBlogService {
   private readonly mvpTopics2025 = [
@@ -199,7 +199,7 @@ Return the content in this JSON format:
     const timestamp = Date.now();
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
     const hour = new Date().getHours();
-    
+
     // Enhanced unique topics for 2025
     const uniqueTopics2025 = [
       `Revolutionary MVP Development Strategies for ${new Date().getFullYear()}: AI-First Innovation`,
@@ -223,11 +223,11 @@ Return the content in this JSON format:
       `EdTech Evolution: Personalized Learning Platform MVPs`,
       `Supply Chain Transparency: Blockchain-Powered MVP Solutions`
     ];
-    
+
     const allTopics = useLatestTrends ? 
       [...uniqueTopics2025, ...this.mvpTopics2025, ...this.trendingTopics2025] : 
       [...this.mvpTopics2025, ...this.trendingTopics2025];
-    
+
     // Use timestamp + day + hour for better uniqueness
     const uniqueIndex = (timestamp + dayOfYear + hour) % allTopics.length;
     return allTopics[uniqueIndex];
@@ -235,20 +235,21 @@ Return the content in this JSON format:
 
   async processQueue(): Promise<void> {
     try {
+      const storage = await getStorage();
       const settings = await storage.getAutoBlogSettings();
       if (!settings?.enabled) {
         return;
       }
 
       const pendingItems = await storage.getAutoBlogQueue("pending");
-      
+
       for (const item of pendingItems.slice(0, 3)) { // Process max 3 at a time
         try {
           await storage.updateAutoBlogQueueStatus(item.id, "processing");
-          
+
           const affiliateLinks = settings.affiliateLinks ? 
             Array.isArray(settings.affiliateLinks) ? settings.affiliateLinks : [] : [];
-          
+
           const content = await this.generateHumanizedBlogPost(
             item.topic,
             affiliateLinks,
@@ -283,7 +284,7 @@ Return the content in this JSON format:
           });
 
           console.log(`Auto-generated blog post: ${content.title}`);
-          
+
         } catch (error) {
           console.error(`Failed to process blog item ${item.id}:`, error);
           await storage.updateAutoBlogQueueStatus(item.id, "failed", {
@@ -298,6 +299,7 @@ Return the content in this JSON format:
 
   async scheduleNextRun(): Promise<void> {
     try {
+      const storage = await getStorage();
       const settings = await storage.getAutoBlogSettings();
       if (!settings?.enabled) {
         return;
@@ -329,7 +331,7 @@ Return the content in this JSON format:
           settings.useLatestTrends ?? true,
           settings.focusOnMyApp ?? true
         );
-        
+
         await storage.createAutoBlogQueueItem({
           topic,
           status: "pending"
@@ -352,7 +354,7 @@ Return the content in this JSON format:
 
   private calculateNextRun(frequency: string, from: Date): Date {
     const next = new Date(from);
-    
+
     if (frequency.startsWith('daily')) {
       next.setDate(next.getDate() + 1);
     } else if (frequency.startsWith('weekly')) {
@@ -360,7 +362,7 @@ Return the content in this JSON format:
     } else if (frequency.startsWith('monthly')) {
       next.setMonth(next.getMonth() + 1);
     }
-    
+
     return next;
   }
 
@@ -368,6 +370,7 @@ Return the content in this JSON format:
 
   async scheduleNextRun(): Promise<void> {
     try {
+      const storage = await getStorage();
       const settings = await storage.getAutoBlogSettings();
       if (!settings || !settings.enabled) return;
 
@@ -398,6 +401,7 @@ Return the content in this JSON format:
   }
 
   async shouldRun(): Promise<boolean> {
+    const storage = await getStorage();
     const settings = await storage.getAutoBlogSettings();
     if (!settings?.enabled) return false;
 
@@ -408,6 +412,7 @@ Return the content in this JSON format:
   }
 
   async queueRandomPost(): Promise<void> {
+    const storage = await getStorage();
     const topic = await this.getRandomTopic();
     await storage.createAutoBlogQueueItem({
       topic,

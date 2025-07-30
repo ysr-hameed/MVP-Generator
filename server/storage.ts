@@ -277,19 +277,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createApiKey(data: InsertApiKey): Promise<ApiKey> {
-    if (!this.db) {
-      const item: ApiKey = {
-        id: `apikey_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        provider: data.provider,
-        key: data.key,
-        isActive: data.isActive ?? true,
-        dailyUsage: 0,
-        lastReset: new Date(),
-        createdAt: new Date(),
-      };
-      this.apiKeys.push(item);
-      return item;
-    }
     const [result] = await this.db.insert(apiKeys).values(data).returning();
     return result;
   }
@@ -813,15 +800,22 @@ import { db, initializeDatabase } from "./db";
 let storage: IStorage;
 
 async function initStorage() {
-  const database = await initializeDatabase();
-  if (database) {
-    console.log("Using database storage");
-    storage = new DatabaseStorage(database);
-  } else {
-    console.log("Using enhanced memory storage");
+  try {
+    const database = await initializeDatabase();
+    if (database) {
+      console.log("✓ Using database storage");
+      storage = new DatabaseStorage(database);
+    } else {
+      console.log("⚠️  Using enhanced memory storage (no database connection)");
+      storage = new EnhancedStorage();
+    }
+    return storage;
+  } catch (error) {
+    console.error("Storage initialization error:", error);
+    console.log("⚠️  Falling back to memory storage");
     storage = new EnhancedStorage();
+    return storage;
   }
-  return storage;
 }
 
 // Enhanced storage with caching and persistence
@@ -944,9 +938,5 @@ export const getStorage = async (): Promise<IStorage> => {
   return storageInstance;
 };
 
-// For backward compatibility - will be initialized on first use
-export const storage: IStorage = new Proxy({} as IStorage, {
-  get: function(target, prop) {
-    throw new Error(`Storage not initialized. Use getStorage() instead of direct storage.${String(prop)}`);
-  }
-});
+// Storage instance will be initialized when getStorage() is called
+export { getStorage };
