@@ -85,8 +85,15 @@ export class GeminiService {
     targetAudience: string,
     budget: string
   ): Promise<MvpPlan> {
+    // Ensure API is initialized before use
+    if (!this.genAI || this.apiKeys.length === 0) {
+      await this.initializeApiKeys();
+    }
+    
     if (!this.genAI) {
-      throw new Error("Gemini API not initialized. Please configure API keys.");
+      console.log("Gemini API not available, using fallback MVP generation");
+      const { generateFallbackMvp } = await import("./fallbackMvp");
+      return generateFallbackMvp(idea, industry, targetAudience, budget);
     }
 
     const prompt = `
@@ -153,8 +160,8 @@ Focus on practical, actionable advice that considers the budget constraints and 
     } catch (error: any) {
       console.error("Gemini API error:", error);
 
-      // Try rotating API key if rate limited or service unavailable
-      if (error.message?.includes("quota") || error.message?.includes("limit") || error.message?.includes("429") || error.message?.includes("503") || error.message?.includes("overloaded")) {
+      // Try rotating API key if rate limited, service unavailable, or overloaded
+      if (error.message?.includes("quota") || error.message?.includes("limit") || error.message?.includes("429") || error.message?.includes("503") || error.message?.includes("overloaded") || error.message?.includes("UNAVAILABLE")) {
         if (this.apiKeys.length > 1) {
           console.log(`API key limit reached, rotating to next key. Current index: ${this.currentKeyIndex}`);
           await this.rotateApiKey();
@@ -188,7 +195,10 @@ Focus on practical, actionable advice that considers the budget constraints and 
             throw new Error("AI service temporarily unavailable. Please try again later.");
           }
         } else {
-          throw new Error("API key limit reached. Please add more API keys or try again tomorrow.");
+          console.log("All API keys exhausted, using fallback MVP generation");
+          // Use fallback MVP generation if all AI services fail
+          const { generateFallbackMvp } = await import("./fallbackMvp");
+          return generateFallbackMvp(idea, industry, targetAudience, budget);
         }
       }
 

@@ -1,20 +1,43 @@
 // Unsplash image service for blog content
 export class UnsplashService {
-  private static readonly BASE_URL = 'https://images.unsplash.com';
+  private static readonly BASE_URL = 'https://api.unsplash.com';
+  private static readonly ACCESS_KEY = '5Whf8VZKlSygYOSPFwAYaUEFwGBK-ZODFBn1vxguRgA';
   
-  // Generate Unsplash image URL with specific parameters
-  static getImageUrl(searchTerm: string, width: number = 1200, height: number = 600): string {
+  // Generate Unsplash image URL with specific parameters using proper API
+  static async getImageUrl(searchTerm: string, width: number = 1200, height: number = 600): Promise<string> {
+    try {
+      // Clean search term
+      const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '+');
+      
+      // Use Unsplash API for high-quality, relevant images
+      const response = await fetch(`${this.BASE_URL}/photos/random?query=${cleanTerm}&orientation=landscape&client_id=${this.ACCESS_KEY}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        // Return the regular image URL with proper dimensions
+        return `${data.urls.raw}&w=${width}&h=${height}&fit=crop&crop=entropy&auto=format&q=80`;
+      }
+    } catch (error) {
+      console.log('Unsplash API error, using fallback:', error);
+    }
+    
+    // Fallback to Unsplash Source if API fails
+    return `https://images.unsplash.com/${width}x${height}/?${cleanTerm}&auto=format&fit=crop&q=80`;
+  }
+  
+  // Synchronous version for immediate use (fallback method)
+  static getImageUrlSync(searchTerm: string, width: number = 1200, height: number = 600): string {
     // Clean search term for URL
     const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '+');
     
     // Use Unsplash Source API for random images
-    return `${this.BASE_URL}/${width}x${height}/?${cleanTerm}&auto=format&fit=crop&q=80`;
+    return `https://images.unsplash.com/${width}x${height}/?${cleanTerm}&auto=format&fit=crop&q=80`;
   }
   
   // Get hero image for article
   static getHeroImage(topic: string): string {
     const searchTerms = this.extractSearchTerms(topic);
-    return this.getImageUrl(searchTerms[0] || 'business', 1200, 600);
+    return this.getImageUrlSync(searchTerms[0] || 'business', 1200, 600);
   }
   
   // Get section images for article content
@@ -31,10 +54,16 @@ export class UnsplashService {
     
     for (let i = 0; i < count; i++) {
       const keyword = searchTerms[i] || sectionKeywords[i] || 'business';
-      images.push(this.getImageUrl(keyword, 800, 400));
+      images.push(this.getImageUrlSync(keyword, 800, 400));
     }
     
     return images;
+  }
+  
+  // Get high-quality image using API (async version)
+  static async getHighQualityImage(topic: string, width: number = 1200, height: number = 600): Promise<string> {
+    const searchTerms = this.extractSearchTerms(topic);
+    return await this.getImageUrl(searchTerms[0] || 'business', width, height);
   }
   
   // Extract relevant search terms from topic
@@ -51,6 +80,6 @@ export class UnsplashService {
   
   // Generate image with specific dimensions for different use cases
   static getCustomImage(searchTerm: string, width: number, height: number): string {
-    return this.getImageUrl(searchTerm, width, height);
+    return this.getImageUrlSync(searchTerm, width, height);
   }
 }
