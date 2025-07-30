@@ -347,14 +347,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/auto-blog/generate", isAuthenticated, async (req, res) => {
     try {
       const { topic } = req.body;
-      const queueItem = await storage.createAutoBlogQueueItem({
+      
+      // Import autoBlog service and generate immediately
+      const { AutoBlogService } = await import("./services/autoBlog");
+      const autoBlogService = new AutoBlogService();
+      
+      // Get auto-blog settings for affiliate links
+      const settings = await storage.getAutoBlogSettings();
+      const affiliateLinks = settings?.affiliateLinks ? 
+        Array.isArray(settings.affiliateLinks) ? settings.affiliateLinks : [] : [];
+      
+      // Generate the blog post content immediately
+      const content = await autoBlogService.generateHumanizedBlogPost(
         topic,
-        status: "pending",
+        affiliateLinks,
+        settings?.useLatestTrends ?? true,
+        settings?.focusOnMyApp ?? true
+      );
+
+      // Create slug from title
+      const slug = content.title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/--+/g, '-')
+        .trim();
+
+      // Save as blog post to database
+      const blogPost = await storage.createBlogPost({
+        title: content.title,
+        slug: slug + `-${Date.now()}`, // Ensure uniqueness
+        excerpt: content.excerpt,
+        content: content.content,
+        author: content.author,
+        metaTitle: content.metaTitle,
+        metaDescription: content.metaDescription,
+        keywords: content.keywords,
+        featured: false
       });
-      res.json(queueItem);
+
+      res.json({ 
+        success: true, 
+        message: "Blog post generated and published successfully",
+        blogPost: blogPost,
+        generatedContent: content
+      });
     } catch (error) {
       console.error("Auto blog generation error:", error);
-      res.status(500).json({ message: "Failed to queue blog generation" });
+      res.status(500).json({ 
+        message: error.message || "Failed to generate blog post" 
+      });
     }
   });
 

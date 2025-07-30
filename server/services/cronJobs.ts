@@ -54,8 +54,64 @@ class CronJobService {
       if (shouldRun) {
         console.log("Auto-blog scheduled run triggered");
 
-        // Queue a random blog post
-        await autoBlogService.queueRandomPost();
+        // Generate and publish blog posts immediately (not just queue)
+        const settings = await storage.getAutoBlogSettings();
+        if (settings?.enabled) {
+          let postsToGenerate = 1;
+          
+          if (settings.frequency.startsWith('daily')) {
+            postsToGenerate = settings.dailyPostCount || 1;
+          } else if (settings.frequency.startsWith('weekly')) {
+            postsToGenerate = settings.weeklyPostCount || 1;
+          } else if (settings.frequency.startsWith('monthly')) {
+            postsToGenerate = settings.monthlyPostCount || 1;
+          }
+
+          // Generate posts immediately
+          for (let i = 0; i < postsToGenerate; i++) {
+            try {
+              const topic = await autoBlogService.getRandomTopic(
+                settings.useLatestTrends ?? true,
+                settings.focusOnMyApp ?? true
+              );
+
+              const affiliateLinks = settings.affiliateLinks ? 
+                Array.isArray(settings.affiliateLinks) ? settings.affiliateLinks : [] : [];
+              
+              const content = await autoBlogService.generateHumanizedBlogPost(
+                topic,
+                affiliateLinks,
+                settings.useLatestTrends ?? true,
+                settings.focusOnMyApp ?? true
+              );
+
+              // Create slug from title
+              const slug = content.title
+                .toLowerCase()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/--+/g, '-')
+                .trim();
+
+              // Save as blog post
+              await storage.createBlogPost({
+                title: content.title,
+                slug: slug + `-${Date.now()}`,
+                excerpt: content.excerpt,
+                content: content.content,
+                author: content.author,
+                metaTitle: content.metaTitle,
+                metaDescription: content.metaDescription,
+                keywords: content.keywords,
+                featured: false
+              });
+
+              console.log(`Auto-generated and published: ${content.title}`);
+            } catch (error) {
+              console.error(`Failed to generate scheduled blog post ${i + 1}:`, error);
+            }
+          }
+        }
 
         // Schedule next run
         await autoBlogService.scheduleNextRun();

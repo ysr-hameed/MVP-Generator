@@ -102,16 +102,17 @@ export function AutoBlogManagement() {
       const response = await apiRequest("POST", "/api/admin/auto-blog/generate", { topic });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
-        title: "Blog Generation Queued",
-        description: "Blog post has been queued for generation.",
+        title: "Blog Post Generated Successfully!",
+        description: `"${data.generatedContent?.title}" has been created and published.`,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/auto-blog"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/content"] }); // Refresh content list
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to Queue Blog",
+        title: "Failed to Generate Blog",
         description: error.message || "Please try again.",
         variant: "destructive",
       });
@@ -192,8 +193,17 @@ export function AutoBlogManagement() {
             className="border-slate-600 text-slate-300 hover:bg-slate-700"
             disabled={generateBlogMutation.isPending}
           >
-            <Play className="w-4 h-4 mr-2" />
-            Generate Now
+            {generateBlogMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Generate & Publish Now
+              </>
+            )}
           </Button>
           <Button
             onClick={() => setShowSettings(!showSettings)}

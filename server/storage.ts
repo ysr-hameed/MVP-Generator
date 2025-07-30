@@ -277,11 +277,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createApiKey(data: InsertApiKey): Promise<ApiKey> {
-    const [key] = await this.db
-      .insert(apiKeys)
-      .values(data)
-      .returning();
-    return key;
+    if (!this.db) {
+      const item: ApiKey = {
+        id: `apikey_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+        provider: data.provider,
+        key: data.key,
+        isActive: data.isActive ?? true,
+        dailyUsage: 0,
+        lastReset: new Date(),
+        createdAt: new Date(),
+      };
+      this.apiKeys.push(item);
+      return item;
+    }
+    const [result] = await this.db.insert(apiKeys).values(data).returning();
+    return result;
   }
 
   async toggleApiKey(id: string, isActive: boolean): Promise<ApiKey> {

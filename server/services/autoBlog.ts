@@ -87,6 +87,18 @@ IMPORTANT REQUIREMENTS:
 - Include actionable takeaways
 - Always reference current year (${currentYear}) and latest trends
 
+SEO OPTIMIZATION REQUIREMENTS:
+- Include primary keyword "${topic}" naturally throughout content
+- Use LSI (Latent Semantic Indexing) keywords related to MVP development
+- Structure content with proper H1, H2, H3 headings
+- Include internal linking opportunities (mention other MVP topics)
+- Add FAQ section if appropriate
+- Include numbered/bulleted lists for better readability
+- Optimize for featured snippets with clear, concise answers
+- Include schema markup suggestions in metadata
+- Ensure keyword density of 1-2% for primary keyword
+- Use long-tail keywords naturally in subheadings
+
 ${affiliateLinks?.length ? `
 AFFILIATE INTEGRATION:
 Naturally integrate these affiliate links where relevant:
@@ -97,14 +109,19 @@ Focus on providing genuine value to entrepreneurs and startup founders. Make it 
 
 Return the content in this JSON format:
 {
-  "title": "SEO-optimized title with ${currentYear}",
-  "slug": "url-friendly-slug",
-  "excerpt": "Compelling 2-sentence excerpt mentioning ${currentYear}",
-  "content": "Full blog post content in markdown with current examples",
-  "metaTitle": "SEO meta title (under 60 chars) with ${currentYear}",
-  "metaDescription": "SEO meta description (under 160 chars) with ${currentYear}",
-  "keywords": ["keyword1", "keyword2", "keyword3", "keyword4", "keyword5"],
-  "author": "MVP Generator AI Team"
+  "title": "SEO-optimized title with ${currentYear} (include primary keyword)",
+  "slug": "url-friendly-slug-with-keywords",
+  "excerpt": "Compelling 2-sentence excerpt mentioning ${currentYear} and primary benefits",
+  "content": "Full blog post content in markdown with proper H1, H2, H3 structure, internal links, and FAQ section",
+  "metaTitle": "SEO meta title (50-60 chars) with primary keyword and ${currentYear}",
+  "metaDescription": "SEO meta description (150-160 chars) with primary keyword, benefits, and CTA",
+  "keywords": ["primary-keyword", "secondary-keyword", "long-tail-keyword", "lsi-keyword", "related-keyword"],
+  "author": "MVP Generator AI Team",
+  "readingTime": "estimated reading time in minutes",
+  "seoScore": "estimated SEO optimization score out of 100",
+  "internalLinks": ["suggested internal link topics"],
+  "externalLinks": ["suggested external authority links"],
+  "faqSection": "FAQ content if applicable"
 }`;
 
     try {
