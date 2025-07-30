@@ -101,11 +101,16 @@ export const adSettings = pgTable("ad_settings", {
 export const autoBlogSettings = pgTable("auto_blog_settings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   enabled: boolean("enabled").default(false),
-  frequency: varchar("frequency").notNull().default("daily"), // daily, weekly, monthly
+  frequency: varchar("frequency").notNull().default("daily"), // daily-1, daily-2, daily-5, weekly-1, weekly-2, weekly-4, monthly-1
+  dailyPostCount: integer("daily_post_count").default(1), // 1-5 posts per day
+  weeklyPostCount: integer("weekly_post_count").default(1), // 1-7 posts per week
+  monthlyPostCount: integer("monthly_post_count").default(1), // 1-30 posts per month
   lastRun: timestamp("last_run"),
   nextRun: timestamp("next_run"),
   topics: text("topics").array().default(sql`ARRAY[]::text[]`),
   affiliateLinks: jsonb("affiliate_links"), // {url, text, placement}
+  useLatestTrends: boolean("use_latest_trends").default(true), // Use 2025 and latest topics
+  focusOnMyApp: boolean("focus_on_my_app").default(true), // Generate content related to MVP generator
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -120,6 +125,24 @@ export const autoBlogQueue = pgTable("auto_blog_queue", {
   createdAt: timestamp("created_at").defaultNow(),
   processedAt: timestamp("processed_at"),
   error: text("error"),
+});
+
+// Site settings for comprehensive control
+export const siteSettings = pgTable("site_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  siteName: varchar("site_name").notNull().default("MVP Generator AI"),
+  siteDescription: text("site_description").notNull().default("Generate comprehensive MVP plans using AI"),
+  contactEmail: varchar("contact_email").notNull().default("admin@mvpgenerator.ai"),
+  contactPhone: varchar("contact_phone"),
+  contactAddress: text("contact_address"),
+  socialLinks: jsonb("social_links"), // {twitter, linkedin, facebook, etc}
+  seoSettings: jsonb("seo_settings"), // {defaultTitle, defaultDescription, keywords, etc}
+  maintenanceMode: boolean("maintenance_mode").default(false),
+  maintenanceMessage: text("maintenance_message"),
+  enableRegistration: boolean("enable_registration").default(false),
+  enableComments: boolean("enable_comments").default(true),
+  maxMvpGenerationsPerDay: integer("max_mvp_generations_per_day").default(10),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 // Schema definitions for validation
@@ -179,6 +202,11 @@ export const insertAutoBlogQueueSchema = createInsertSchema(autoBlogQueue).omit(
   processedAt: true,
 });
 
+export const insertSiteSettingsSchema = createInsertSchema(siteSettings).omit({
+  id: true,
+  updatedAt: true,
+});
+
 // MVP Generator form schema
 export const mvpGeneratorSchema = z.object({
   idea: z.string().min(10, "Please provide a detailed description"),
@@ -226,6 +254,9 @@ export type InsertAutoBlogSettings = z.infer<typeof insertAutoBlogSettingsSchema
 
 export type AutoBlogQueue = typeof autoBlogQueue.$inferSelect;
 export type InsertAutoBlogQueue = z.infer<typeof insertAutoBlogQueueSchema>;
+
+export type SiteSettings = typeof siteSettings.$inferSelect;
+export type InsertSiteSettings = z.infer<typeof insertSiteSettingsSchema>;
 
 export type MvpGeneratorData = z.infer<typeof mvpGeneratorSchema>;
 export type ContactFormData = z.infer<typeof contactFormSchema>;

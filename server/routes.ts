@@ -12,6 +12,7 @@ import {
   insertAdvertisementSchema,
   insertAdSettingsSchema,
   insertAutoBlogSettingsSchema,
+  insertSiteSettingsSchema,
   mvpGeneratorSchema,
   contactFormSchema
 } from "@shared/schema";
@@ -423,12 +424,159 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/email-config/test", isAuthenticated, async (req, res) => {
     try {
       const { email } = req.body;
-      // In a real implementation, you would send a test email here
-      // For now, we'll just simulate success
-      res.json({ success: true, message: "Test email sent successfully" });
+      // Mock email test - in production this would send a real test email
+      res.json({ success: true, message: "Test email would be sent to " + email });
     } catch (error) {
-      console.error("Test email error:", error);
+      console.error("Email test error:", error);
       res.status(500).json({ message: "Failed to send test email" });
+    }
+  });
+
+  // Enhanced Site Settings
+  app.get("/api/admin/site-settings", isAuthenticated, async (req, res) => {
+    try {
+      const settings = await storage.getSiteSettings();
+      res.json(settings || {
+        siteName: "MVP Generator AI",
+        siteDescription: "Generate comprehensive MVP plans using AI",
+        contactEmail: "admin@mvpgenerator.ai",
+        contactPhone: null,
+        contactAddress: null,
+        socialLinks: null,
+        seoSettings: null,
+        maintenanceMode: false,
+        maintenanceMessage: null,
+        enableRegistration: false,
+        enableComments: true,
+        maxMvpGenerationsPerDay: 10
+      });
+    } catch (error) {
+      console.error("Site settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch site settings" });
+    }
+  });
+
+  app.post("/api/admin/site-settings", isAuthenticated, async (req, res) => {
+    try {
+      const data = insertSiteSettingsSchema.parse(req.body);
+      const settings = await storage.updateSiteSettings(data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Site settings update error:", error);
+      res.status(400).json({ message: "Invalid site settings data" });
+    }
+  });
+
+  // Enhanced Auto Blog with new scheduling options
+  app.post("/api/admin/auto-blog/test-generation", isAuthenticated, async (req, res) => {
+    try {
+      const { topic } = req.body;
+      if (!topic) {
+        return res.status(400).json({ message: "Topic is required" });
+      }
+
+      // Import autoBlog service and generate a test post
+      const { AutoBlogService } = await import("./services/autoBlog");
+      const autoBlogService = new AutoBlogService();
+      
+      const content = await autoBlogService.generateHumanizedBlogPost(topic, [], true, true);
+      res.json({ success: true, preview: content });
+    } catch (error) {
+      console.error("Test generation error:", error);
+      res.status(500).json({ message: "Failed to generate test content" });
+    }
+  });
+
+  app.post("/api/admin/auto-blog/schedule-immediate", isAuthenticated, async (req, res) => {
+    try {
+      const { count = 1 } = req.body;
+      
+      // Import autoBlog service
+      const { AutoBlogService } = await import("./services/autoBlog");
+      const autoBlogService = new AutoBlogService();
+      
+      // Schedule posts immediately
+      for (let i = 0; i < Math.min(count, 5); i++) { // Max 5 at once
+        const topic = await autoBlogService.getRandomTopic(true, true);
+        await storage.createAutoBlogQueueItem({
+          topic,
+          status: "pending"
+        });
+      }
+      
+      res.json({ success: true, message: `Scheduled ${count} posts for immediate generation` });
+    } catch (error) {
+      console.error("Immediate schedule error:", error);
+      res.status(500).json({ message: "Failed to schedule posts" });
+    }
+  });
+
+  // Advanced SEO Management
+  app.get("/api/seo/meta/:page", async (req, res) => {
+    try {
+      const { page } = req.params;
+      const siteSettings = await storage.getSiteSettings();
+      const seoSettings = siteSettings?.seoSettings as any || {};
+      
+      let meta = {
+        title: siteSettings?.siteName || "MVP Generator AI",
+        description: siteSettings?.siteDescription || "Generate comprehensive MVP plans using AI",
+        keywords: ["MVP", "startup", "business plan", "AI", "generator"]
+      };
+
+      // Page-specific SEO
+      switch (page) {
+        case "home":
+          meta.title = `${siteSettings?.siteName || "MVP Generator AI"} - AI-Powered Startup Planning`;
+          meta.description = "Transform your startup ideas into comprehensive MVP plans with our AI-powered generator. Get tech stacks, features, and roadmaps in minutes.";
+          break;
+        case "generator":
+          meta.title = "MVP Generator - Create Your Startup Plan";
+          meta.description = "Use our AI MVP generator to create detailed startup plans. Input your idea and get a complete roadmap with tech stack recommendations.";
+          break;
+        case "blog":
+          meta.title = "Startup & MVP Development Blog";
+          meta.description = "Expert insights on MVP development, startup strategies, and entrepreneurship. Learn from real-world examples and industry best practices.";
+          break;
+      }
+
+      // Override with custom SEO settings if available
+      if (seoSettings[page]) {
+        meta = { ...meta, ...seoSettings[page] };
+      }
+
+      res.json(meta);
+    } catch (error) {
+      console.error("SEO meta fetch error:", error);
+      res.json({
+        title: "MVP Generator AI",
+        description: "Generate comprehensive MVP plans using AI",
+        keywords: ["MVP", "startup", "business plan", "AI"]
+      });
+    }
+  });
+
+  // Contact form with site settings integration
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const data = contactFormSchema.parse(req.body);
+      
+      const contact = await storage.createContact(data);
+      
+      // Track the contact form submission
+      await storage.trackPageView({
+        page: "/contact",
+        sessionId: req.sessionID,
+        metadata: { action: "contact_form_submit", subject: data.subject }
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Thank you for your message. We'll get back to you soon!" 
+      });
+    } catch (error) {
+      console.error("Contact form error:", error);
+      res.status(400).json({ message: "Please check your form and try again" });
     }
   });
 

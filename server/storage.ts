@@ -9,6 +9,7 @@ import {
   adSettings,
   autoBlogSettings,
   autoBlogQueue,
+  siteSettings,
   type Analytics,
   type InsertAnalytics,
   type MvpGeneration,
@@ -29,6 +30,8 @@ import {
   type InsertAutoBlogSettings,
   type AutoBlogQueue,
   type InsertAutoBlogQueue,
+  type SiteSettings,
+  type InsertSiteSettings,
 } from "@shared/schema";
 import { eq, desc, and, count, sql } from "drizzle-orm";
 
@@ -79,6 +82,10 @@ export interface IStorage {
   createAutoBlogQueueItem(data: InsertAutoBlogQueue): Promise<AutoBlogQueue>;
   getAutoBlogQueue(status?: string): Promise<AutoBlogQueue[]>;
   updateAutoBlogQueueStatus(id: string, status: string, data?: any): Promise<void>;
+  
+  // Site settings operations
+  getSiteSettings(): Promise<SiteSettings | undefined>;
+  updateSiteSettings(data: Partial<InsertSiteSettings>): Promise<SiteSettings>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -388,6 +395,27 @@ export class DatabaseStorage implements IStorage {
       .set(updateData)
       .where(eq(autoBlogQueue.id, id));
   }
+
+  async getSiteSettings(): Promise<SiteSettings | undefined> {
+    const results = await this.db.select().from(siteSettings).limit(1);
+    return results[0];
+  }
+
+  async updateSiteSettings(data: Partial<InsertSiteSettings>): Promise<SiteSettings> {
+    const existing = await this.getSiteSettings();
+    
+    if (existing) {
+      const [result] = await this.db
+        .update(siteSettings)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(siteSettings.id, existing.id))
+        .returning();
+      return result;
+    } else {
+      const [result] = await this.db.insert(siteSettings).values(data).returning();
+      return result;
+    }
+  }
 }
 
 // Memory storage implementation for development without database
@@ -396,12 +424,13 @@ export class MemoryStorage implements IStorage {
   private mvpGenerations: MvpGeneration[] = [];
   private blogPosts: BlogPost[] = [];
   private contacts: Contact[] = [];
-  private settings: Map<string, AdminSetting> = new Map();
+  private settings: AdminSetting[] = [];
   private apiKeys: ApiKey[] = [];
   private advertisements: Advertisement[] = [];
   private adSettings: AdSettings | undefined;
   private autoBlogSettings: AutoBlogSettings | undefined;
   private autoBlogQueue: AutoBlogQueue[] = [];
+  private siteSettings: SiteSettings | undefined;
 
   async trackPageView(data: InsertAnalytics): Promise<Analytics> {
     const analytics: Analytics = {
@@ -620,7 +649,12 @@ export class MemoryStorage implements IStorage {
   async createAdvertisement(data: InsertAdvertisement): Promise<Advertisement> {
     const advertisement: Advertisement = {
       id: `ad_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-      ...data,
+      name: data.name,
+      adCode: data.adCode,
+      width: data.width,
+      height: data.height,
+      position: data.position,
+      isActive: data.isActive ?? true,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -654,7 +688,8 @@ export class MemoryStorage implements IStorage {
   async updateAdSettings(data: InsertAdSettings): Promise<AdSettings> {
     this.adSettings = {
       id: this.adSettings?.id || `adsettings_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-      ...data,
+      adCount: data.adCount || "3",
+      enableAds: data.enableAds ?? true,
       updatedAt: new Date(),
     };
     return this.adSettings;
@@ -667,16 +702,31 @@ export class MemoryStorage implements IStorage {
   async updateAutoBlogSettings(data: Partial<InsertAutoBlogSettings>): Promise<AutoBlogSettings> {
     this.autoBlogSettings = {
       id: this.autoBlogSettings?.id || `autoblogsettings_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-      ...data,
+      enabled: data.enabled ?? false,
+      frequency: data.frequency || "daily",
+      dailyPostCount: data.dailyPostCount ?? 1,
+      weeklyPostCount: data.weeklyPostCount ?? 1,
+      monthlyPostCount: data.monthlyPostCount ?? 1,
+      lastRun: data.lastRun || null,
+      nextRun: data.nextRun || null,
+      topics: data.topics || [],
+      affiliateLinks: data.affiliateLinks || null,
+      useLatestTrends: data.useLatestTrends ?? true,
+      focusOnMyApp: data.focusOnMyApp ?? true,
+      createdAt: this.autoBlogSettings?.createdAt || new Date(),
       updatedAt: new Date(),
     };
-    return this.autoBlogSettings as AutoBlogSettings;
+    return this.autoBlogSettings;
   }
 
   async createAutoBlogQueueItem(data: InsertAutoBlogQueue): Promise<AutoBlogQueue> {
     const item: AutoBlogQueue = {
       id: `autoblogqueue_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-      ...data,
+      status: data.status || "pending",
+      topic: data.topic,
+      generatedContent: data.generatedContent || null,
+      publishedPostId: data.publishedPostId || null,
+      error: data.error || null,
       createdAt: new Date(),
       processedAt: null,
     };
@@ -701,6 +751,30 @@ export class MemoryStorage implements IStorage {
         if (data.error) item.error = data.error;
       }
     }
+  }
+
+  async getSiteSettings(): Promise<SiteSettings | undefined> {
+    return this.siteSettings;
+  }
+
+  async updateSiteSettings(data: Partial<InsertSiteSettings>): Promise<SiteSettings> {
+    this.siteSettings = {
+      id: this.siteSettings?.id || `sitesettings_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      siteName: data.siteName || "MVP Generator AI",
+      siteDescription: data.siteDescription || "Generate comprehensive MVP plans using AI",
+      contactEmail: data.contactEmail || "admin@mvpgenerator.ai",
+      contactPhone: data.contactPhone || null,
+      contactAddress: data.contactAddress || null,
+      socialLinks: data.socialLinks || null,
+      seoSettings: data.seoSettings || null,
+      maintenanceMode: data.maintenanceMode ?? false,
+      maintenanceMessage: data.maintenanceMessage || null,
+      enableRegistration: data.enableRegistration ?? false,
+      enableComments: data.enableComments ?? true,
+      maxMvpGenerationsPerDay: data.maxMvpGenerationsPerDay ?? 10,
+      updatedAt: new Date(),
+    };
+    return this.siteSettings;
   }
 }
 

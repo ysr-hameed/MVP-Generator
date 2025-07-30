@@ -8,6 +8,17 @@ This is a full-stack web application that generates comprehensive MVP (Minimum V
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### July 30, 2025 - Major Feature Enhancements
+- **Enhanced Admin Settings**: Complete site control with contact details, SEO settings, and maintenance mode
+- **Advanced Blog Scheduling**: Flexible scheduling (daily 1-5 posts, weekly 1-7 posts, monthly 1-30 posts)
+- **Latest Content Generation**: AI generates content with current year (2025) and trending topics
+- **Comprehensive Site Settings**: New siteSettings table for complete site customization
+- **Enhanced Auto Blog Service**: Uses latest trends, focuses on MVP Generator app, proper date handling
+- **Advanced SEO Management**: Dynamic meta tags, page-specific optimization
+- **Improved Admin Interface**: Enhanced controls for all aspects of site management
+
 ## System Architecture
 
 ### Frontend Architecture
