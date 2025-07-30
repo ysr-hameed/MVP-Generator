@@ -57,14 +57,14 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async trackPageView(data: InsertAnalytics): Promise<Analytics> {
-    const [analytics] = await db
+    const [analyticsResult] = await db
       .insert(analytics)
       .values({
         ...data,
         ip: data.ip?.substring(0, 12) + '***', // Privacy: partial IP
       })
       .returning();
-    return analytics;
+    return analyticsResult;
   }
 
   async getAnalytics(dateRange?: { from: Date; to: Date }) {

@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import MvpGenerator from "@/pages/mvp-generator";
 import Blog from "@/pages/blog";
+import BlogPost from "@/pages/blog-post";
 import About from "@/pages/about";
 import Contact from "@/pages/contact";
 import AdminLogin from "@/pages/admin/login";
@@ -50,6 +51,7 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/mvp-generator" component={MvpGenerator} />
         <Route path="/blog" component={Blog} />
+        <Route path="/blog/:slug" component={BlogPost} />
         <Route path="/about" component={About} />
         <Route path="/contact" component={Contact} />
         <Route path="/admin/login" component={AdminLogin} />

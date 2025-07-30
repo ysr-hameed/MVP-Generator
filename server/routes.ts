@@ -12,16 +12,23 @@ import {
   mvpGeneratorSchema,
   contactFormSchema
 } from "@shared/schema";
+import { adminAuth, requireAdmin, verifyToken } from "./middleware/auth";
 
 // Simple auth middleware for admin routes
 const isAuthenticated = (req: any, res: any, next: any) => {
-  const { username, password } = req.session || {};
+  const token = req.headers.authorization?.replace('Bearer ', '') || req.session?.token;
   
-  if (username === process.env.ADMIN_USER && password === process.env.ADMIN_PASS) {
-    return next();
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized - No token" });
   }
   
-  res.status(401).json({ message: "Unauthorized" });
+  const decoded = verifyToken(token);
+  if (!decoded || !decoded.isAdmin) {
+    return res.status(401).json({ message: "Unauthorized - Invalid token" });
+  }
+  
+  req.user = decoded;
+  next();
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -121,22 +128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin authentication
-  app.post("/api/admin/login", async (req: any, res) => {
-    try {
-      const { username, password } = req.body;
-      
-      if (username === process.env.ADMIN_USER && password === process.env.ADMIN_PASS) {
-        req.session.username = username;
-        req.session.password = password;
-        res.json({ success: true });
-      } else {
-        res.status(401).json({ message: "Invalid credentials" });
-      }
-    } catch (error) {
-      console.error("Admin login error:", error);
-      res.status(500).json({ message: "Login failed" });
-    }
-  });
+  app.post("/api/admin/login", adminAuth);
 
   app.post("/api/admin/logout", async (req: any, res) => {
     req.session.destroy((err: any) => {

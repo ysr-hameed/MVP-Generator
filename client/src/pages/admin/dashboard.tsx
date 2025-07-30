@@ -19,60 +19,63 @@ import {
   Palette,
   MessageSquare
 } from "lucide-react";
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("analytics");
-  const { toast } = useToast();
 
-  // Check authentication status
-  const { data: authStatus, isLoading: authLoading } = useQuery({
-    queryKey: ["/api/admin/check"],
-    retry: false,
-  });
+  // Check authentication on component mount
+  const { data: authCheck, isLoading } = useQuery({
+    queryKey: ["admin-auth-check"],
+    queryFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      if (!token) {
+        throw new Error('No token found');
+      }
 
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/admin/logout", {});
+      const response = await fetch('/api/admin/check', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        localStorage.removeItem('adminToken');
+        throw new Error('Authentication failed');
+      }
+
       return response.json();
     },
-    onSuccess: () => {
-      toast({
-        title: "Logged Out",
-        description: "You have been successfully logged out.",
-      });
-      setLocation("/admin/login");
-    },
-    onError: (error: any) => {
-      console.error("Logout error:", error);
-      toast({
-        title: "Logout Failed",
-        description: "There was an error logging out.",
-        variant: "destructive",
-      });
-    },
+    retry: false
   });
 
   useEffect(() => {
-    if (!authLoading && (!authStatus?.authenticated)) {
-      setLocation("/admin/login");
+    if (!localStorage.getItem('adminToken')) {
+      setLocation('/admin/login');
     }
-  }, [authStatus, authLoading, setLocation]);
+  }, [setLocation]);
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !authCheck) {
+      setLocation('/admin/login');
+    }
+  }, [authCheck, isLoading, setLocation]);
 
-  if (authLoading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="loading-spinner"></div>
+      <div className="container-max py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
       </div>
     );
   }
 
-  if (!authStatus?.authenticated) {
-    return null;
+  if (!authCheck) {
+    return null; // Will redirect to login
   }
 
   return (
@@ -81,7 +84,7 @@ export default function AdminDashboard() {
         title="Admin Dashboard - MVP Generator AI"
         description="MVP Generator AI admin dashboard for managing content, analytics, and system settings."
       />
-      
+
       <div className="min-h-screen bg-slate-900 text-white">
         {/* Header */}
         <header className="border-b border-slate-700 bg-slate-800">
@@ -96,7 +99,7 @@ export default function AdminDashboard() {
                   <p className="text-xs text-slate-400">MVP Generator AI</p>
                 </div>
               </div>
-              
+
               <Button
                 variant="ghost"
                 onClick={handleLogout}

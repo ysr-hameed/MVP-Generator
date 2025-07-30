@@ -95,7 +95,7 @@ export default function Blog() {
         description="Expert insights on MVP development, AI tools for startups, and comprehensive guides for entrepreneurs. Learn how to build successful startups with AI."
         keywords="startup blog, MVP development, AI tools, business insights, entrepreneur guides, startup tips"
       />
-      
+
       <div className="pt-16">
         {/* Hero Section */}
         <section className="section-padding bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
@@ -108,7 +108,7 @@ export default function Blog() {
                 Expert insights on MVP development, AI tools for startups, and comprehensive guides for entrepreneurs.
               </p>
             </div>
-            
+
             {/* Search Bar */}
             <div className="max-w-2xl mx-auto">
               <div className="relative">
@@ -134,7 +134,7 @@ export default function Blog() {
                   Featured Article
                 </h2>
               </div>
-              
+
               {(() => {
                 const featuredPost = filteredPosts.find(post => post.featured)!;
                 return (
@@ -189,7 +189,7 @@ export default function Blog() {
                 {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''} found
               </p>
             </div>
-            
+
             {isLoading ? (
               <div className="grid md:grid-cols-3 gap-8">
                 {[...Array(6)].map((_, i) => (
@@ -251,7 +251,7 @@ export default function Blog() {
                 ))}
               </div>
             )}
-            
+
             {filteredPosts.length > 0 && (
               <div className="text-center mt-12">
                 <Button className="btn-primary">

@@ -208,7 +208,7 @@ export function ContentManagement() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="slug"
@@ -274,7 +274,7 @@ export function ContentManagement() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="imageUrl"
@@ -306,7 +306,7 @@ export function ContentManagement() {
                         isEditing ? "Update Post" : "Create Post"
                       )}
                     </Button>
-                    
+
                     <Button
                       type="button"
                       variant="ghost"
@@ -395,3 +395,38 @@ export function ContentManagement() {
     </div>
   );
 }
+const createApiKeyMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/admin/api-keys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(data)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create API key');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "API key created successfully",
+      });
+      apiKeyForm.reset();
+      refetch();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create API key",
+        variant: "destructive",
+      });
+    },
+  });
