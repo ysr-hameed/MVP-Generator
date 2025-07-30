@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -41,21 +41,42 @@ export function SiteConfig() {
   const form = useForm<z.infer<typeof siteConfigSchema>>({
     resolver: zodResolver(siteConfigSchema),
     defaultValues: {
-      siteName: siteConfig?.siteName || "MVP Generator AI",
-      siteDescription: siteConfig?.siteDescription || "Transform your ideas into actionable MVP plans",
-      siteUrl: siteConfig?.siteUrl || "https://mvp-generator.com",
-      logoUrl: siteConfig?.logoUrl || "",
-      favicon: siteConfig?.favicon || "",
-      maintenanceMode: siteConfig?.maintenanceMode || false,
-      maintenanceMessage: siteConfig?.maintenanceMessage || "We're currently updating our platform. Please check back soon!",
+      siteName: "MVP Generator AI",
+      siteDescription: "Transform your ideas into actionable MVP plans",
+      siteUrl: "https://mvp-generator.com",
+      logoUrl: "",
+      favicon: "",
+      maintenanceMode: false,
+      maintenanceMessage: "We're currently updating our platform. Please check back soon!",
       socialLinks: {
-        twitter: siteConfig?.socialLinks?.twitter || "",
-        facebook: siteConfig?.socialLinks?.facebook || "",
-        linkedin: siteConfig?.socialLinks?.linkedin || "",
-        instagram: siteConfig?.socialLinks?.instagram || "",
+        twitter: "",
+        facebook: "",
+        linkedin: "",
+        instagram: "",
       },
     },
   });
+
+  // Update form when data loads
+  useEffect(() => {
+    if (siteConfig) {
+      form.reset({
+        siteName: siteConfig.siteName || "MVP Generator AI",
+        siteDescription: siteConfig.siteDescription || "Transform your ideas into actionable MVP plans",
+        siteUrl: siteConfig.siteUrl || "https://mvp-generator.com",
+        logoUrl: siteConfig.logoUrl || "",
+        favicon: siteConfig.favicon || "",
+        maintenanceMode: siteConfig.maintenanceMode || false,
+        maintenanceMessage: siteConfig.maintenanceMessage || "We're currently updating our platform. Please check back soon!",
+        socialLinks: {
+          twitter: siteConfig.socialLinks?.twitter || "",
+          facebook: siteConfig.socialLinks?.facebook || "",
+          linkedin: siteConfig.socialLinks?.linkedin || "",
+          instagram: siteConfig.socialLinks?.instagram || "",
+        },
+      });
+    }
+  }, [siteConfig, form]);
 
   const updateConfigMutation = useMutation({
     mutationFn: async (data: z.infer<typeof siteConfigSchema>) => {

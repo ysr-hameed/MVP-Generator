@@ -25,6 +25,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { SiteConfig } from "@/components/admin/site-config";
+import { SeoSettings } from "@/components/admin/seo-settings";
+import { EmailConfig } from "@/components/admin/email-config";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
@@ -444,15 +447,15 @@ function GeneralSettings() {
         <div className="space-y-6">
           <div>
             <h4 className="font-semibold text-white mb-2">Site Configuration</h4>
-            <p className="text-slate-400">Manage general site settings and configurations.</p>
+            <SiteConfig />
           </div>
           <div>
             <h4 className="font-semibold text-white mb-2">SEO Settings</h4>
-            <p className="text-slate-400">Configure meta tags and SEO optimization settings.</p>
+            <SeoSettings />
           </div>
           <div>
             <h4 className="font-semibold text-white mb-2">Email Configuration</h4>
-            <p className="text-slate-400">Set up email notifications and SMTP settings.</p>
+            <EmailConfig />
           </div>
         </div>
       </CardContent>
