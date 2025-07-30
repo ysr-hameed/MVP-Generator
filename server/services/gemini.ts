@@ -60,8 +60,21 @@ export class GeminiService {
   }
 
   private async rotateApiKey() {
-    this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
-    this.genAI = new GoogleGenAI({ apiKey: this.apiKeys[this.currentKeyIndex] });
+    const startIndex = this.currentKeyIndex;
+    do {
+      this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
+      const apiKey = this.apiKeys[this.currentKeyIndex];
+      
+      // Check if this key has exceeded daily limits
+      const keyData = await storage.getApiKeyByValue(apiKey);
+      if (keyData && keyData.dailyUsage < 50) { // Assuming 50 requests per day limit for free tier
+        this.genAI = new GoogleGenAI({ apiKey: apiKey });
+        return;
+      }
+    } while (this.currentKeyIndex !== startIndex);
+    
+    // If all keys are at limit, use the first one anyway (it will fail but that's expected)
+    this.genAI = new GoogleGenAI({ apiKey: this.apiKeys[0] });
   }
 
   async generateMvpPlan(
@@ -115,11 +128,15 @@ Focus on practical, actionable advice that considers the budget constraints and 
 `;
 
     try {
-      const response = await this.genAI.models.generateContent({
+      const response = await this.genAI!.models.generateContent({
         model: "gemini-1.5-flash",
         contents: prompt,
       });
       const text = response.text;
+
+      // Track API usage
+      const currentApiKey = this.apiKeys[this.currentKeyIndex];
+      await storage.incrementApiUsage(currentApiKey);
 
       // Parse JSON response
       const cleanedText = text.replace(/```json\s*|\s*```/g, '').trim();
@@ -130,10 +147,12 @@ Focus on practical, actionable advice that considers the budget constraints and 
       console.error("Gemini API error:", error);
 
       // Try rotating API key if rate limited
-      if (error.message?.includes("quota") || error.message?.includes("limit")) {
+      if (error.message?.includes("quota") || error.message?.includes("limit") || error.message?.includes("429")) {
         if (this.apiKeys.length > 1) {
+          console.log(`API key limit reached, rotating to next key. Current index: ${this.currentKeyIndex}`);
           await this.rotateApiKey();
-          // Retry once with new key
+          
+          // Retry with new key
           try {
             const response = await this.genAI!.models.generateContent({
               model: "gemini-1.5-flash",
@@ -141,14 +160,23 @@ Focus on practical, actionable advice that considers the budget constraints and 
             });
             const text = response.text;
 
+            // Track API usage for retry
+            const currentApiKey = this.apiKeys[this.currentKeyIndex];
+            await storage.incrementApiUsage(currentApiKey);
+
             const cleanedText = text.replace(/```json\s*|\s*```/g, '').trim();
             const mvpPlan = JSON.parse(cleanedText) as MvpPlan;
 
             return mvpPlan;
-          } catch (retryError) {
+          } catch (retryError: any) {
             console.error("Retry failed:", retryError);
+            if (retryError.message?.includes("quota") || retryError.message?.includes("limit")) {
+              throw new Error("All API keys have reached their daily limits. Please try again tomorrow or add more API keys.");
+            }
             throw new Error("AI service temporarily unavailable. Please try again later.");
           }
+        } else {
+          throw new Error("API key limit reached. Please add more API keys or try again tomorrow.");
         }
       }
 

@@ -628,10 +628,15 @@ export class MemoryStorage implements IStorage {
     }
   }
 
-  async incrementApiUsage(id: string): Promise<void> {
-    const key = this.apiKeys.find(k => k.id === id);
+  async getApiKeyByValue(keyValue: string): Promise<ApiKey | undefined> {
+    return this.apiKeys.find(k => k.key === keyValue);
+  }
+
+  async incrementApiUsage(keyValue: string): Promise<void> {
+    const key = this.apiKeys.find(k => k.key === keyValue);
     if (key) {
       key.dailyUsage = (key.dailyUsage || 0) + 1;
+      key.lastReset = new Date();
     }
   }
 
