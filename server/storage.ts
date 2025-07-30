@@ -800,7 +800,20 @@ export class MemoryStorage implements IStorage {
 import { db, initializeDatabase } from "./db";
 
 // Initialize database connection and storage
-const database = initializeDatabase();
+let storage: IStorage;
+
+async function initStorage() {
+  const database = await initializeDatabase();
+  if (database) {
+    console.log("Using database storage");
+    storage = new DatabaseStorage(database);
+  } else {
+    console.log("Using enhanced memory storage");
+    storage = new EnhancedStorage();
+  }
+  return storage;
+}
+
 // Enhanced storage with caching and persistence
 class EnhancedStorage extends MemoryStorage {
   private cache = new Map<string, { data: any; expires: number }>();
@@ -911,4 +924,19 @@ class EnhancedStorage extends MemoryStorage {
   }
 }
 
-export const storage: IStorage = new EnhancedStorage();
+// Initialize storage based on database availability
+let storageInstance: IStorage | null = null;
+
+export const getStorage = async (): Promise<IStorage> => {
+  if (!storageInstance) {
+    storageInstance = await initStorage();
+  }
+  return storageInstance;
+};
+
+// For backward compatibility - will be initialized on first use
+export const storage: IStorage = new Proxy({} as IStorage, {
+  get: function(target, prop) {
+    throw new Error(`Storage not initialized. Use getStorage() instead of direct storage.${String(prop)}`);
+  }
+});

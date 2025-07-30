@@ -341,6 +341,44 @@ function ApiKeysManagement() {
     }
   });
 
+  const deleteApiKeyMutation = useMutation({
+    mutationFn: async (keyId: string) => {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch(`/api/admin/api-keys/${keyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete API key');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "API Key Deleted",
+        description: "The API key has been successfully deleted.",
+      });
+      refetch();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete API key. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteApiKey = (keyId: string) => {
+    if (confirm('Are you sure you want to delete this API key?')) {
+      deleteApiKeyMutation.mutate(keyId);
+    }
+  };
+
   const handleAddApiKey = () => {
     if (newApiKey.trim()) {
       addApiKeyMutation.mutate(newApiKey.trim());
@@ -408,13 +446,23 @@ function ApiKeysManagement() {
                     Provider: {key.provider || 'gemini'} | Usage: {key.dailyUsage || 0}
                   </span>
                 </div>
-                <div className="flex flex-col text-right">
-                  <span className={`text-xs ${key.isActive ? 'text-green-400' : 'text-red-400'}`}>
-                    {key.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    Added {new Date(key.createdAt).toLocaleDateString()}
-                  </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col text-right">
+                    <span className={`text-xs ${key.isActive ? 'text-green-400' : 'text-red-400'}`}>
+                      {key.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <span className="text-xs text-slate-400">
+                      Added {new Date(key.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteApiKey(key.id)}
+                    className="text-red-400 border-red-600 hover:bg-red-900"
+                  >
+                    Delete
+                  </Button>
                 </div>
               </div>
             ))}

@@ -21,16 +21,16 @@ import { adminAuth, requireAdmin, verifyToken } from "./middleware/auth";
 // Simple auth middleware for admin routes
 const isAuthenticated = (req: any, res: any, next: any) => {
   const token = req.headers.authorization?.replace('Bearer ', '') || req.session?.token;
-  
+
   if (!token) {
     return res.status(401).json({ message: "Unauthorized - No token" });
   }
-  
+
   const decoded = verifyToken(token);
   if (!decoded || !decoded.isAdmin) {
     return res.status(401).json({ message: "Unauthorized - Invalid token" });
   }
-  
+
   req.user = decoded;
   next();
 };
@@ -56,7 +56,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
       });
-      
+
       const analytics = await storage.trackPageView(data);
       res.json(analytics);
     } catch (error) {
@@ -69,7 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/mvp/generate", async (req, res) => {
     try {
       const data = mvpGeneratorSchema.parse(req.body);
-      
+
       // Generate MVP plan using Gemini
       const plan = await geminiService.generateMvpPlan(
         data.idea,
@@ -77,7 +77,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         data.targetAudience,
         data.budget
       );
-      
+
       // Store the generation
       await storage.createMvpGeneration({
         ...data,
@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ip: req.ip,
         sessionId: req.sessionID,
       });
-      
+
       res.json(plan);
     } catch (error) {
       console.error("MVP generation error:", error);
@@ -478,7 +478,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Import autoBlog service and generate a test post
       const { AutoBlogService } = await import("./services/autoBlog");
       const autoBlogService = new AutoBlogService();
-      
+
       const content = await autoBlogService.generateHumanizedBlogPost(topic, [], true, true);
       res.json({ success: true, preview: content });
     } catch (error) {
@@ -490,11 +490,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/auto-blog/schedule-immediate", isAuthenticated, async (req, res) => {
     try {
       const { count = 1 } = req.body;
-      
+
       // Import autoBlog service
       const { AutoBlogService } = await import("./services/autoBlog");
       const autoBlogService = new AutoBlogService();
-      
+
       // Schedule posts immediately
       for (let i = 0; i < Math.min(count, 5); i++) { // Max 5 at once
         const topic = await autoBlogService.getRandomTopic(true, true);
@@ -503,7 +503,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: "pending"
         });
       }
-      
+
       res.json({ success: true, message: `Scheduled ${count} posts for immediate generation` });
     } catch (error) {
       console.error("Immediate schedule error:", error);
@@ -517,7 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { page } = req.params;
       const siteSettings = await storage.getSiteSettings();
       const seoSettings = siteSettings?.seoSettings as any || {};
-      
+
       let meta = {
         title: siteSettings?.siteName || "MVP Generator AI",
         description: siteSettings?.siteDescription || "Generate comprehensive MVP plans using AI",
@@ -560,9 +560,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/contact", async (req, res) => {
     try {
       const data = contactFormSchema.parse(req.body);
-      
+
       const contact = await storage.createContact(data);
-      
+
       // Track the contact form submission
       await storage.trackPageView({
         page: "/contact",
@@ -587,15 +587,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!adSettings?.enableAds) {
         return res.json([]);
       }
-      
+
       const ads = await storage.getAdvertisements();
       const activeAds = ads.filter(ad => ad.isActive);
-      
+
       // Filter by ad count setting
       let maxAds = 2; // low
       if (adSettings.adCount === "medium") maxAds = 4;
       if (adSettings.adCount === "high") maxAds = 6;
-      
+
       res.json(activeAds.slice(0, maxAds));
     } catch (error) {
       console.error("Public ads fetch error:", error);
@@ -610,7 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const siteTitle = await storage.getSetting("siteTitle");
       const siteDescription = await storage.getSetting("siteDescription");
       const analyticsId = await storage.getSetting("analyticsId");
-      
+
       res.json({
         siteTitle: siteTitle?.value || "MVP Generator AI",
         siteDescription: siteDescription?.value || "Transform your startup ideas into comprehensive MVP plans",
@@ -630,6 +630,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Settings update error:", error);
       res.status(500).json({ message: "Failed to update setting" });
+    }
+  });
+
+  app.post("/api/mvp-generate", async (req, res) => {
+    try {
+      const storage = await getStorage();
+      await storage.trackPageView({
+        page: "/api/mvp-generate",
+        userAgent: req.headers["user-agent"],
+        ip: req.ip,
+        sessionId: req.session?.id,
+        metadata: { endpoint: "mvp-generate" },
+      });
+
+      const data = insertMvpGenerationSchema.parse(req.body);
+      const geminiServiceInstance = new geminiService(storage);
+      const mvpPlan = await geminiServiceInstance.generateMvpPlan(
+        data.idea,
+        data.industry,
+        data.targetAudience,
+        data.budget
+      );
+
+      await storage.createMvpGeneration({
+        idea: data.idea,
+        industry: data.industry,
+        targetAudience: data.targetAudience,
+        budget: data.budget,
+        result: mvpPlan,
+        ip: req.ip,
+        sessionId: req.session?.id,
+      });
+
+      res.status(200).json({ plan: mvpPlan });
+    } catch (error: any) {
+      console.error("MVP generation error:", error);
+      res
+        .status(500)
+        .json({ message: error.message || "Failed to generate MVP plan" });
     }
   });
 

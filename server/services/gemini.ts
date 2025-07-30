@@ -64,7 +64,7 @@ export class GeminiService {
     do {
       this.currentKeyIndex = (this.currentKeyIndex + 1) % this.apiKeys.length;
       const apiKey = this.apiKeys[this.currentKeyIndex];
-      
+
       // Check if this key has exceeded daily limits
       const keyData = await storage.getApiKeyByValue(apiKey);
       if (keyData && keyData.dailyUsage < 50) { // Assuming 50 requests per day limit for free tier
@@ -72,7 +72,7 @@ export class GeminiService {
         return;
       }
     } while (this.currentKeyIndex !== startIndex);
-    
+
     // If all keys are at limit, use the first one anyway (it will fail but that's expected)
     this.genAI = new GoogleGenAI({ apiKey: this.apiKeys[0] });
   }
@@ -151,7 +151,7 @@ Focus on practical, actionable advice that considers the budget constraints and 
         if (this.apiKeys.length > 1) {
           console.log(`API key limit reached, rotating to next key. Current index: ${this.currentKeyIndex}`);
           await this.rotateApiKey();
-          
+
           // Retry with new key
           try {
             const response = await this.genAI!.models.generateContent({
@@ -185,7 +185,25 @@ Focus on practical, actionable advice that considers the budget constraints and 
   }
 
   async generateContent(prompt: string): Promise<string> {
-    const apiKey = await storage.getActiveApiKey("gemini");
+    async function getActiveApiKey(): Promise<string | null> {
+      try {
+        const storage = await getStorage();
+        const keys = await storage.getActiveApiKeys("gemini");
+        if (keys.length === 0) {
+          console.warn("No active Gemini API keys found");
+          return null;
+        }
+
+        // Return the key with lowest usage (rotation)
+        const selectedKey = keys[0];
+        await storage.incrementApiUsage(selectedKey.id);
+        return selectedKey.key;
+      } catch (error) {
+        console.error("Error getting API key:", error);
+        return null;
+      }
+    }
+    const apiKey = await getActiveApiKey();
     if (!apiKey) {
       throw new Error("No active Gemini API key found");
     }
