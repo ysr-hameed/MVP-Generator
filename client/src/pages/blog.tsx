@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import SEOHead from "@/components/seo-head";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Calendar, Clock, ArrowRight, TrendingUp } from "lucide-react";
 import { type BlogPost } from "@shared/schema";
+import { useRouter } from 'next/navigation';
 
 export default function Blog() {
   const [searchTerm, setSearchTerm] = useState("");
+  const router = useRouter();
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ["/api/blog/posts"],
@@ -86,6 +88,10 @@ export default function Blog() {
     const wordsPerMinute = 200;
     const words = content.split(' ').length;
     return Math.ceil(words / wordsPerMinute);
+  };
+
+  const handleReadMore = (slug: string) => {
+    router.push(`/blog/${slug}`);
   };
 
   return (
@@ -166,7 +172,7 @@ export default function Blog() {
                         </p>
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium">{featuredPost.author}</span>
-                          <Button variant="ghost" className="group">
+                          <Button variant="ghost" className="group" onClick={() => handleReadMore(featuredPost.slug)}>
                             Read more
                             <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                           </Button>
@@ -217,7 +223,7 @@ export default function Blog() {
             ) : (
               <div className="grid md:grid-cols-3 gap-8">
                 {filteredPosts.filter(post => !post.featured).map((post) => (
-                  <Card key={post.id} className="blog-card cursor-pointer">
+                  <Card key={post.id} className="blog-card cursor-pointer" onClick={() => handleReadMore(post.slug)}>
                     <div className="relative">
                       <img 
                         src={post.imageUrl || "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=400"} 
@@ -241,7 +247,7 @@ export default function Blog() {
                       </p>
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">{post.author}</span>
-                        <Button variant="ghost" size="sm" className="group">
+                        <Button variant="ghost" size="sm" className="group" onClick={() => handleReadMore(post.slug)}>
                           Read more
                           <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-1 transition-transform" />
                         </Button>
@@ -265,3 +271,4 @@ export default function Blog() {
     </>
   );
 }
+```

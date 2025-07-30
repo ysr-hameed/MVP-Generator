@@ -19,12 +19,38 @@ import {
   Palette,
   MessageSquare
 } from "lucide-react";
-import { useEffect } from "react";
-import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
 
 export default function AdminDashboard() {
   const [, setLocation] = useLocation();
+  const [activeTab, setActiveTab] = useState("analytics");
+  const { toast } = useToast();
+
+  // Logout mutation
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const token = localStorage.getItem('adminToken');
+      if (token) {
+        await fetch('/api/admin/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+      localStorage.removeItem('adminToken');
+    },
+    onSuccess: () => {
+      toast({
+        title: "Logged out successfully",
+        description: "You have been logged out of the admin panel.",
+      });
+      setLocation('/admin/login');
+    }
+  });
+
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
 
   // Check authentication on component mount
   const { data: authCheck, isLoading } = useQuery({
@@ -232,16 +258,119 @@ function ContactsManagement() {
 }
 
 function ApiKeysManagement() {
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newApiKey, setNewApiKey] = useState("");
+  const { toast } = useToast();
+
+  const { data: apiKeys = [], refetch } = useQuery({
+    queryKey: ["/api/admin/api-keys"],
+  });
+
+  const addApiKeyMutation = useMutation({
+    mutationFn: async (apiKey: string) => {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/admin/api-keys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ apiKey })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add API key');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "API Key Added",
+        description: "The API key has been successfully added.",
+      });
+      setNewApiKey("");
+      setShowAddForm(false);
+      refetch();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add API key. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleAddApiKey = () => {
+    if (newApiKey.trim()) {
+      addApiKeyMutation.mutate(newApiKey.trim());
+    }
+  };
+
   return (
     <Card className="bg-slate-800 border-slate-700">
       <CardHeader>
         <CardTitle className="text-white">API Key Management</CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className="text-slate-400 mb-4">
+      <CardContent className="space-y-4">
+        <p className="text-slate-400">
           Manage your Gemini API keys for AI-powered MVP generation.
         </p>
-        <Button className="btn-primary">Add New API Key</Button>
+        
+        {!showAddForm ? (
+          <Button 
+            className="btn-primary"
+            onClick={() => setShowAddForm(true)}
+          >
+            Add New API Key
+          </Button>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={newApiKey}
+                onChange={(e) => setNewApiKey(e.target.value)}
+                placeholder="Enter your Gemini API key"
+                className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400"
+              />
+              <Button 
+                onClick={handleAddApiKey}
+                disabled={addApiKeyMutation.isPending || !newApiKey.trim()}
+                className="btn-primary"
+              >
+                {addApiKeyMutation.isPending ? "Adding..." : "Add"}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setNewApiKey("");
+                }}
+                className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {apiKeys.length > 0 && (
+          <div className="space-y-2">
+            <h4 className="font-semibold text-white">Current API Keys</h4>
+            {apiKeys.map((key: any, index: number) => (
+              <div key={index} className="flex justify-between items-center p-3 bg-slate-700 rounded-lg">
+                <span className="text-slate-300 font-mono">
+                  {key.key.substring(0, 8)}...{key.key.substring(key.key.length - 8)}
+                </span>
+                <span className="text-xs text-slate-400">
+                  Added {new Date(key.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
