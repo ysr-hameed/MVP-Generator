@@ -187,7 +187,7 @@ Return the content in this JSON format:
     return allTopics[Math.floor(Math.random() * allTopics.length)];
   }
 
-  async processAutoBlogQueue(): Promise<void> {
+  async processQueue(): Promise<void> {
     try {
       const settings = await storage.getAutoBlogSettings();
       if (!settings?.enabled) {
@@ -250,7 +250,7 @@ Return the content in this JSON format:
     }
   }
 
-  async scheduleNewPosts(): Promise<void> {
+  async scheduleNextRun(): Promise<void> {
     try {
       const settings = await storage.getAutoBlogSettings();
       if (!settings?.enabled) {

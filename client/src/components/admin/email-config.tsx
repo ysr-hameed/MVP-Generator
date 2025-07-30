@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Mail, Send, Loader2 } from "lucide-react";
+import { Mail, Send, Loader2, Beaker } from "lucide-react";
 import { z } from "zod";
 
 const emailConfigSchema = z.object({
@@ -401,7 +401,7 @@ export function EmailConfig() {
                       </>
                     ) : (
                       <>
-                        <TestTube className="w-4 h-4 mr-2" />
+                        <Beaker className="w-4 h-4 mr-2" />
                         Test Email
                       </>
                     )}

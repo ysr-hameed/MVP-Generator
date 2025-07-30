@@ -783,4 +783,114 @@ import { db, initializeDatabase } from "./db";
 
 // Initialize database connection and storage
 const database = initializeDatabase();
-export const storage: IStorage = database ? new DatabaseStorage(database) : new MemoryStorage();
+// Enhanced storage with caching and persistence
+class EnhancedStorage extends MemoryStorage {
+  private cache = new Map<string, { data: any; expires: number }>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  constructor() {
+    super();
+    this.initializeDefaults();
+  }
+
+  private initializeDefaults() {
+    console.log("Initializing enhanced storage with defaults...");
+    
+    // Ensure default auto blog settings exist
+    if (!this.autoBlogSettings) {
+      this.updateAutoBlogSettings({
+        enabled: false,
+        frequency: "daily_1",
+        useLatestTrends: true,
+        focusOnMyApp: true,
+        affiliateLinks: []
+      });
+    }
+
+    // Initialize site settings if not exists
+    if (!this.siteSettings) {
+      this.updateSiteSettings({
+        siteName: "MVP Generator AI",
+        siteDescription: "Generate comprehensive MVP plans using AI",
+        contactEmail: "admin@mvpgenerator.ai",
+        maintenanceMode: false,
+        enableRegistration: false,
+        enableComments: true,
+        maxMvpGenerationsPerDay: 10
+      });
+    }
+    
+    console.log("Enhanced storage initialized with defaults");
+  }
+
+  // Enhanced caching methods
+  private getCached<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (cached && Date.now() < cached.expires) {
+      return cached.data;
+    }
+    this.cache.delete(key);
+    return null;
+  }
+
+  private setCache<T>(key: string, data: T): void {
+    this.cache.set(key, {
+      data,
+      expires: Date.now() + this.CACHE_TTL
+    });
+  }
+
+  // Override methods with caching
+  async getBlogPosts(limit = 50): Promise<BlogPost[]> {
+    const cacheKey = `blog_posts_${limit}`;
+    const cached = this.getCached<BlogPost[]>(cacheKey);
+    if (cached) return cached;
+
+    const result = await super.getBlogPosts(limit);
+    this.setCache(cacheKey, result);
+    return result;
+  }
+
+  async getAutoBlogSettings(): Promise<AutoBlogSettings | undefined> {
+    const cacheKey = "auto_blog_settings";
+    const cached = this.getCached<AutoBlogSettings>(cacheKey);
+    if (cached) return cached;
+
+    const result = await super.getAutoBlogSettings();
+    if (result) this.setCache(cacheKey, result);
+    return result;
+  }
+
+  async getSiteSettings(): Promise<SiteSettings | undefined> {
+    const cacheKey = "site_settings";  
+    const cached = this.getCached<SiteSettings>(cacheKey);
+    if (cached) return cached;
+
+    const result = await super.getSiteSettings();
+    if (result) this.setCache(cacheKey, result);
+    return result;
+  }
+
+  // Clear cache when data is updated
+  async createBlogPost(data: InsertBlogPost): Promise<BlogPost> {
+    // Clear blog posts cache when new post is created
+    Array.from(this.cache.keys()).forEach(key => {
+      if (key.startsWith("blog_posts_")) {
+        this.cache.delete(key);
+      }
+    });
+    return await super.createBlogPost(data);
+  }
+
+  async updateAutoBlogSettings(data: Partial<InsertAutoBlogSettings>): Promise<AutoBlogSettings> {
+    this.cache.delete("auto_blog_settings");
+    return await super.updateAutoBlogSettings(data);
+  }
+
+  async updateSiteSettings(data: Partial<InsertSiteSettings>): Promise<SiteSettings> {
+    this.cache.delete("site_settings");
+    return await super.updateSiteSettings(data);
+  }
+}
+
+export const storage: IStorage = new EnhancedStorage();
