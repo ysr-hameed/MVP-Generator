@@ -178,13 +178,42 @@ Return the content in this JSON format:
   }
 
   async getRandomTopic(useLatestTrends = true, focusOnMyApp = true): Promise<string> {
-    const allTopics = [...this.mvpTopics2025];
+    // Create unique topics each time with timestamp-based selection
+    const timestamp = Date.now();
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    const hour = new Date().getHours();
     
-    if (useLatestTrends) {
-      allTopics.push(...this.trendingTopics2025);
-    }
+    // Enhanced unique topics for 2025
+    const uniqueTopics2025 = [
+      `Revolutionary MVP Development Strategies for ${new Date().getFullYear()}: AI-First Innovation`,
+      `Next-Generation Startup Validation Beyond Traditional MVPs`,
+      `Zero-Code MVP Creation: Empowering Non-Technical Founders in ${new Date().getFullYear()}`,
+      `Sustainable Business Models: Green Tech MVPs Leading the Future`,
+      `Quantum Computing Applications in Early-Stage Startups`,
+      `Web3 Integration Strategies for Modern MVP Development`,
+      `AR/VR Enhanced User Experience in Minimum Viable Products`,
+      `Voice-First MVPs: Conversational AI Product Development Trends`,
+      `Edge Computing Solutions for Lightning-Fast MVP Performance`,
+      `Climate Tech Startups: Building Impactful Environmental MVPs`,
+      `Personalized AI Customer Experience in MVP Development`,
+      `Mental Health Tech: Compassionate MVP Design Principles`,
+      `Remote Work Solutions: Building MVPs for Distributed Teams`,
+      `Cybersecurity-First MVP Architecture for ${new Date().getFullYear()}`,
+      `Social Impact Startups: Purpose-Driven MVP Development`,
+      `IoT Integration Strategies for Connected Product MVPs`,
+      `FinTech Disruption: Building Compliant Financial MVPs`,
+      `Healthcare Innovation: HIPAA-Compliant MVP Development`,
+      `EdTech Evolution: Personalized Learning Platform MVPs`,
+      `Supply Chain Transparency: Blockchain-Powered MVP Solutions`
+    ];
     
-    return allTopics[Math.floor(Math.random() * allTopics.length)];
+    const allTopics = useLatestTrends ? 
+      [...uniqueTopics2025, ...this.mvpTopics2025, ...this.trendingTopics2025] : 
+      [...this.mvpTopics2025, ...this.trendingTopics2025];
+    
+    // Use timestamp + day + hour for better uniqueness
+    const uniqueIndex = (timestamp + dayOfYear + hour) % allTopics.length;
+    return allTopics[uniqueIndex];
   }
 
   async processQueue(): Promise<void> {
