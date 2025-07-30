@@ -1,4 +1,5 @@
 import { geminiService } from "./gemini";
+import { UnsplashService } from "./unsplashService";
 import { getStorage } from "../storage";
 
 export class AutoBlogService {
@@ -112,7 +113,7 @@ Return the content in this JSON format:
   "title": "SEO-optimized title with ${currentYear} (include primary keyword)",
   "slug": "url-friendly-slug-with-keywords",
   "excerpt": "Compelling 2-sentence excerpt mentioning ${currentYear} and primary benefits",
-  "content": "Full blog post content in markdown with proper H1, H2, H3 structure, internal links, and FAQ section",
+  "content": "Full blog post content in HTML format with proper structure, styled elements, images from Unsplash, and engaging layout",
   "metaTitle": "SEO meta title (50-60 chars) with primary keyword and ${currentYear}",
   "metaDescription": "SEO meta description (150-160 chars) with primary keyword, benefits, and CTA",
   "keywords": ["primary-keyword", "secondary-keyword", "long-tail-keyword", "lsi-keyword", "related-keyword"],
@@ -121,8 +122,20 @@ Return the content in this JSON format:
   "seoScore": "estimated SEO optimization score out of 100",
   "internalLinks": ["suggested internal link topics"],
   "externalLinks": ["suggested external authority links"],
-  "faqSection": "FAQ content if applicable"
-}`;
+  "faqSection": "FAQ content if applicable",
+  "imageUrl": "https://images.unsplash.com/featured-image-relevant-to-topic"
+}
+
+CONTENT FORMATTING REQUIREMENTS:
+- Use proper HTML structure with semantic tags
+- Include hero image from Unsplash API (search for relevant keywords)
+- Add section images throughout the article (3-4 images total)
+- Use proper typography with headings (h1, h2, h3)
+- Include styled lists, blockquotes, and call-to-action boxes
+- Add reading progress indicators and engagement elements
+- Use CSS classes for styling: 'article-hero', 'section-image', 'highlight-box', 'cta-section'
+- Images should be unique for each article - use different search terms
+- Format content for readability with proper paragraphs and spacing`;
 
     try {
       const response = await geminiService.generateContent(prompt);
@@ -131,6 +144,10 @@ Return the content in this JSON format:
       const cleanedResponse = response.replace(/```json\s*|\s*```/g, '').trim();
       const content = JSON.parse(cleanedResponse);
 
+      // Add Unsplash images to content
+      content.imageUrl = UnsplashService.getHeroImage(topic);
+      content.content = this.enhanceContentWithImages(content.content, topic);
+      
       // Add additional humanization touches
       content.content = this.addHumanTouches(content.content, affiliateLinks);
 
@@ -193,6 +210,63 @@ Return the content in this JSON format:
     }
 
     return humanizedContent;
+  }
+
+  private enhanceContentWithImages(content: string, topic: string): string {
+    // Get section images
+    const sectionImages = UnsplashService.getSectionImages(topic, 3);
+    
+    // Convert markdown/plain content to HTML with images
+    let htmlContent = content;
+    
+    // If content is in markdown format, convert key elements to HTML
+    if (content.includes('#')) {
+      // Convert headings
+      htmlContent = htmlContent.replace(/^# (.*$)/gm, '<h1 class="article-title">$1</h1>');
+      htmlContent = htmlContent.replace(/^## (.*$)/gm, '<h2 class="section-heading">$1</h2>');
+      htmlContent = htmlContent.replace(/^### (.*$)/gm, '<h3 class="subsection-heading">$1</h3>');
+      
+      // Convert lists
+      htmlContent = htmlContent.replace(/^\- (.*$)/gm, '<li>$1</li>');
+      htmlContent = htmlContent.replace(/(<li>.*<\/li>)/s, '<ul class="styled-list">$1</ul>');
+      
+      // Convert bold text
+      htmlContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      
+      // Convert italic text
+      htmlContent = htmlContent.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    }
+    
+    // Add hero image at the beginning
+    const heroImage = UnsplashService.getHeroImage(topic);
+    htmlContent = `<div class="article-hero">
+      <img src="${heroImage}" alt="${topic}" class="hero-image" style="width: 100%; height: 400px; object-fit: cover; border-radius: 12px; margin-bottom: 2rem;" />
+    </div>\n\n${htmlContent}`;
+    
+    // Insert section images throughout the content
+    const sections = htmlContent.split('<h2');
+    if (sections.length > 1) {
+      for (let i = 1; i < Math.min(sections.length, 4); i++) {
+        if (sectionImages[i-1]) {
+          sections[i] = `<div class="section-image" style="margin: 2rem 0;">
+            <img src="${sectionImages[i-1]}" alt="Section illustration" style="width: 100%; height: 300px; object-fit: cover; border-radius: 8px;" />
+          </div>\n<h2${sections[i]}`;
+        }
+      }
+      htmlContent = sections.join('');
+    }
+    
+    // Add proper paragraph tags
+    htmlContent = htmlContent.replace(/\n\n([^<\n].*?)(?=\n\n|$)/g, '\n\n<p class="article-paragraph">$1</p>');
+    
+    // Add call-to-action section
+    htmlContent += `\n\n<div class="cta-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin: 2rem 0;">
+      <h3 style="color: white; margin-bottom: 1rem;">Ready to Build Your MVP?</h3>
+      <p style="margin-bottom: 1.5rem;">Use our MVP Generator AI to create a comprehensive plan tailored to your specific idea and industry.</p>
+      <a href="/mvp-generator" style="background: white; color: #667eea; padding: 0.75rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Generate Your MVP Plan</a>
+    </div>`;
+    
+    return htmlContent;
   }
 
   async getRandomTopic(useLatestTrends = true, focusOnMyApp = true): Promise<string> {
