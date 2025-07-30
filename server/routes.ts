@@ -26,7 +26,8 @@ const isAuthenticated = (req: any, res: any, next: any) => {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Enable sessions for admin auth
-  app.use(require('express-session')({
+  const session = await import('express-session');
+  app.use(session.default({
     secret: process.env.SESSION_SECRET || 'mvp-generator-secret',
     resave: false,
     saveUninitialized: false,
