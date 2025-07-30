@@ -200,7 +200,6 @@ Focus on practical, actionable advice that considers the budget constraints and 
 
         // Return the key with lowest usage (rotation)
         const selectedKey = activeKeys[0];
-        const storage = await getStorage();
         // Increment usage for this key
         await storage.incrementApiUsage(selectedKey.id);
         return selectedKey.key;
