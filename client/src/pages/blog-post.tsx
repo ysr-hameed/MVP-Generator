@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useRoute } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Link } from "wouter";
 import SEOHead from "@/components/seo-head";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { BlogAdDisplay } from "@/components/ad-display";
 
 export default function BlogPost() {
   const [match, params] = useRoute("/blog/:slug");
@@ -68,7 +68,7 @@ export default function BlogPost() {
         title={`${post.title} - MVP Generator AI Blog`}
         description={post.excerpt || post.content?.substring(0, 160) + "..."}
       />
-      
+
       <div className="container-max py-12">
         <div className="max-w-4xl mx-auto">
           <Link href="/blog">
@@ -77,6 +77,8 @@ export default function BlogPost() {
               Back to Blog
             </Button>
           </Link>
+
+          <BlogAdDisplay position="blog-top" />
 
           <Card>
             <CardHeader>
@@ -87,11 +89,11 @@ export default function BlogPost() {
                   </Badge>
                 ))}
               </div>
-              
+
               <CardTitle className="text-3xl font-bold leading-tight">
                 {post.title}
               </CardTitle>
-              
+
               <div className="flex items-center gap-6 text-muted-foreground mt-4">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4" />
@@ -109,20 +111,27 @@ export default function BlogPost() {
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent>
               {post.excerpt && (
                 <div className="text-lg text-muted-foreground mb-8 p-4 bg-muted/30 rounded-lg border-l-4 border-primary">
                   {post.excerpt}
                 </div>
               )}
-              
+
               <div 
                 className="prose prose-lg max-w-none dark:prose-invert"
-                dangerouslySetInnerHTML={{ __html: post.content }}
-              />
+              >
+                  <div dangerouslySetInnerHTML={{ __html: post.content.split('</h2>')[0] + '</h2>' }} />
+
+                  <BlogAdDisplay position="blog-middle" />
+
+                  <div dangerouslySetInnerHTML={{ __html: post.content.split('</h2>').slice(1).join('</h2>') }} />
+                </div>
             </CardContent>
           </Card>
+
+          <BlogAdDisplay position="blog-bottom" />
         </div>
       </div>
     </>

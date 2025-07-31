@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -205,6 +204,18 @@ export function AdvertisementManagement() {
     }
   };
 
+  const adPositions = [
+    { value: "header", label: "Header" },
+    { value: "sidebar", label: "Sidebar" },
+    { value: "content", label: "Content" },
+    { value: "footer", label: "Footer" },
+    { value: "blog-top", label: "Blog Top" },
+    { value: "blog-middle", label: "Blog Middle" },
+    { value: "blog-bottom", label: "Blog Bottom" },
+    { value: "generator-top", label: "Generator Top" },
+    { value: "generator-bottom", label: "Generator Bottom" },
+  ];
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -357,10 +368,11 @@ export function AdvertisementManagement() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="header">Header</SelectItem>
-                            <SelectItem value="sidebar">Sidebar</SelectItem>
-                            <SelectItem value="content">Within Content</SelectItem>
-                            <SelectItem value="footer">Footer</SelectItem>
+                            {adPositions.map((position) => (
+                              <SelectItem key={position.value} value={position.value}>
+                                {position.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />

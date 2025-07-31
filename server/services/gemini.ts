@@ -137,11 +137,10 @@ Focus on practical, actionable advice that considers the budget constraints and 
 `;
 
     try {
-      const response = await this.genAI!.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: prompt,
-      });
-      const text = response.text || "";
+      const model = this.genAI!.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
 
       // Track API usage
       if (this.apiKeys[this.currentKeyIndex]) {
@@ -168,11 +167,10 @@ Focus on practical, actionable advice that considers the budget constraints and 
 
           // Retry with new key
           try {
-            const response = await this.genAI!.models.generateContent({
-              model: "gemini-1.5-flash",
-              contents: prompt,
-            });
-            const text = response.text || "";
+            const model = this.genAI!.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
 
             // Track API usage for retry
             if (this.apiKeys[this.currentKeyIndex]) {

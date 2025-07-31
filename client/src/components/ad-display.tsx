@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 interface AdDisplayProps {
-  position: "header" | "sidebar" | "content" | "footer";
+  position: "header" | "sidebar" | "content" | "footer" | "blog-top" | "blog-middle" | "blog-bottom" | "generator-top" | "generator-bottom";
   className?: string;
 }
 
@@ -29,9 +29,21 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
   // Apply ad count limits based on settings
   const getMaxAdsForPosition = () => {
     const counts = {
-      low: { header: 1, sidebar: 2, content: 1, footer: 1 },
-      medium: { header: 1, sidebar: 3, content: 2, footer: 1 },
-      high: { header: 2, sidebar: 4, content: 3, footer: 2 }
+      low: { 
+        header: 1, sidebar: 2, content: 1, footer: 1,
+        "blog-top": 1, "blog-middle": 1, "blog-bottom": 1,
+        "generator-top": 1, "generator-bottom": 1
+      },
+      medium: { 
+        header: 1, sidebar: 3, content: 2, footer: 1,
+        "blog-top": 2, "blog-middle": 2, "blog-bottom": 1,
+        "generator-top": 1, "generator-bottom": 2
+      },
+      high: { 
+        header: 2, sidebar: 4, content: 3, footer: 2,
+        "blog-top": 2, "blog-middle": 3, "blog-bottom": 2,
+        "generator-top": 2, "generator-bottom": 2
+      }
     };
     return counts[adSettings?.adCount || 'low'][position] || 1;
   };
@@ -49,34 +61,39 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
           if (ad.adCode && ad.adCode.trim()) {
             // Small delay to ensure DOM is ready
             setTimeout(() => {
-              if (ad.adCode.includes('<script')) {
-                // Create a temporary div to parse the ad code
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = ad.adCode;
-                
-                // Find and execute scripts
-                const scripts = tempDiv.getElementsByTagName('script');
-                Array.from(scripts).forEach(script => {
-                  if (script.src) {
-                    // External script
-                    const newScript = document.createElement('script');
-                    newScript.src = script.src;
-                    newScript.async = true;
-                    newScript.defer = true;
-                    newScript.onload = () => console.log('Ad script loaded:', script.src);
-                    newScript.onerror = () => console.log('Ad script failed to load:', script.src);
-                    document.head.appendChild(newScript);
-                  } else if (script.textContent && script.textContent.trim()) {
-                    // Inline script with error handling
-                    try {
+              try {
+                if (ad.adCode.includes('<script')) {
+                  // Create a temporary div to parse the ad code
+                  const tempDiv = document.createElement('div');
+                  tempDiv.innerHTML = ad.adCode;
+                  
+                  // Find and execute scripts
+                  const scripts = tempDiv.getElementsByTagName('script');
+                  Array.from(scripts).forEach((script, index) => {
+                    if (script.src) {
+                      // External script
                       const newScript = document.createElement('script');
-                      newScript.textContent = script.textContent;
-                      document.body.appendChild(newScript);
-                    } catch (scriptError) {
-                      console.error('Error executing inline script:', scriptError);
+                      newScript.src = script.src;
+                      newScript.async = true;
+                      newScript.defer = true;
+                      newScript.onload = () => console.log('Ad script loaded:', script.src);
+                      newScript.onerror = () => console.log('Ad script failed to load:', script.src);
+                      document.head.appendChild(newScript);
+                    } else if (script.textContent && script.textContent.trim()) {
+                      // Inline script with error handling
+                      try {
+                        const newScript = document.createElement('script');
+                        newScript.textContent = script.textContent;
+                        newScript.id = `ad-script-${ad.id}-${index}`;
+                        document.body.appendChild(newScript);
+                      } catch (scriptError) {
+                        console.error('Error executing inline script:', scriptError);
+                      }
                     }
-                  }
-                });
+                  });
+                }
+              } catch (error) {
+                console.error('Error processing ad code:', error);
               }
             }, 100);
           }
@@ -101,7 +118,8 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
           style={{
             width: `${ad.width}px`,
             height: `${ad.height}px`,
-            maxWidth: '100%'
+            maxWidth: '100%',
+            margin: '1rem auto'
           }}
         >
           <div 
@@ -152,6 +170,15 @@ export function ResponsiveAdDisplay({ position, className = "" }: AdDisplayProps
         }
       `}</style>
       <AdDisplay position={position} />
+    </div>
+  );
+}
+
+// Blog-specific ad component
+export function BlogAdDisplay({ position }: { position: "blog-top" | "blog-middle" | "blog-bottom" }) {
+  return (
+    <div className="blog-ad-section my-8">
+      <AdDisplay position={position} className="flex justify-center" />
     </div>
   );
 }

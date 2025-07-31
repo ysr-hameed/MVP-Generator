@@ -57,7 +57,7 @@ export default function Blog() {
       <div className="pt-16">
         {/* Header Ads */}
         <AdDisplay position="header" className="py-4 bg-slate-50" />
-        
+
         {/* Hero Section */}
         <section className="section-padding bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
           <div className="container-max">
@@ -190,8 +190,14 @@ export default function Blog() {
                 )}
               </div>
             ) : (
-              <div className="grid md:grid-cols-3 gap-8">
-                {filteredPosts.filter(post => !post.featured).map((post) => (
+              <AdDisplay position="content" className="flex justify-center mb-8" />
+
+        <div className="grid md:grid-cols-3 gap-8">
+                {filteredPosts.filter(post => !post.featured).map((post, index) => (
+                  <div key={post.id}>
+                  {index === Math.floor(filteredPosts.filter(post => !post.featured).length / 2) && (
+                    <AdDisplay position="content" className="flex justify-center my-8" />
+                  )}
                   <Card key={post.id} className="blog-card cursor-pointer" onClick={() => handleReadMore(post.slug)}>
                     <div className="relative">
                       <img 
@@ -226,6 +232,7 @@ export default function Blog() {
                       </div>
                     </CardContent>
                   </Card>
+                </div>
                 ))}
               </div>
             )}
