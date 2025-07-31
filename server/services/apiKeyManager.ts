@@ -141,5 +141,27 @@ export class ApiKeyManager {
     }
   }
 
-  async rotateToNextKey(service: string): Promise<string | null> {
+  static async rotateToNextKey(service: string): Promise<string | null> {
+    try {
+      const storage = await getStorage();
+      const keys = await storage.getActiveApiKeys(service);
+      
+      if (keys.length === 0) {
+        return null;
+      }
+
+      // Find the next available key
+      for (const key of keys) {
+        if (key.dailyUsage < 50) { // Under daily limit
+          return key.key;
+        }
+      }
+
+      // If all keys are at limit, return the first one
+      return keys[0]?.key || null;
+    } catch (error) {
+      console.error("Failed to rotate API key:", error);
+      return null;
+    }
+  }
 }

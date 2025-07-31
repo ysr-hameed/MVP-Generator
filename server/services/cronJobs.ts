@@ -1,4 +1,6 @@
 import { autoBlogService } from "./autoBlog";
+import { ApiKeyManager } from "./apiKeyManager";
+import { SitemapGenerator } from "./sitemapGenerator";
 import { getStorage } from "../storage";
 
 class CronJobService {
@@ -59,7 +61,7 @@ class CronJobService {
         const settings = await storage.getAutoBlogSettings();
         if (settings?.enabled) {
           let postsToGenerate = 1;
-          
+
           if (settings.frequency.startsWith('daily')) {
             postsToGenerate = settings.dailyPostCount || 1;
           } else if (settings.frequency.startsWith('weekly')) {
@@ -78,7 +80,7 @@ class CronJobService {
 
               const affiliateLinks = settings.affiliateLinks ? 
                 Array.isArray(settings.affiliateLinks) ? settings.affiliateLinks : [] : [];
-              
+
               const content = await autoBlogService.generateHumanizedBlogPost(
                 topic,
                 affiliateLinks,
