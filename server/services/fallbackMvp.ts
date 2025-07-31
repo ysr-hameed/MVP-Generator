@@ -1,7 +1,8 @@
 // Fallback MVP generation when AI services are unavailable
 export function generateFallbackMvp(idea: string, industry: string, targetAudience: string, budget: string) {
-  const budgetAmount = budget.includes("$10,000") ? "low" : 
-                      budget.includes("$50,000") ? "medium" : "high";
+  const budgetAmount = budget.includes("free") || budget.includes("$0") || budget.includes("Free") ? "free" :
+                      budget.includes("low-budget") || budget.includes("$1,000") || budget.includes("$5,000") ? "low" :
+                      budget.includes("under-10k") || budget.includes("$15,000") ? "medium" : "high";
   
   const techStacks = {
     "Food & Beverage": {
@@ -44,15 +45,17 @@ export function generateFallbackMvp(idea: string, industry: string, targetAudien
   const selectedTech = techStacks[industry] || techStacks.default;
 
   const timelines = {
-    low: { mvp: "8-12 weeks", launch: "3-4 months", growth: "6-12 months" },
-    medium: { mvp: "6-10 weeks", launch: "2-3 months", growth: "4-8 months" },
-    high: { mvp: "4-8 weeks", launch: "1-2 months", growth: "3-6 months" }
+    free: { mvp: "16-24 weeks", launch: "6-8 months", growth: "12-18 months" },
+    low: { mvp: "12-16 weeks", launch: "4-5 months", growth: "8-12 months" },
+    medium: { mvp: "8-12 weeks", launch: "3-4 months", growth: "6-10 months" },
+    high: { mvp: "6-10 weeks", launch: "2-3 months", growth: "4-8 months" }
   };
 
   const costs = {
-    low: { development: "$8,000 - $15,000", monthly: "$200 - $500" },
-    medium: { development: "$15,000 - $35,000", monthly: "$500 - $1,500" },
-    high: { development: "$35,000 - $75,000", monthly: "$1,500 - $5,000" }
+    free: { development: "$0 - $500 (DIY approach)", monthly: "$0 - $50" },
+    low: { development: "$1,000 - $8,000", monthly: "$100 - $300" },
+    medium: { development: "$8,000 - $25,000", monthly: "$300 - $1,000" },
+    high: { development: "$25,000 - $75,000", monthly: "$1,000 - $5,000" }
   };
 
   const industryFeatures = {
@@ -91,9 +94,17 @@ export function generateFallbackMvp(idea: string, industry: string, targetAudien
   return {
     coreFeatures: features,
     techStack: selectedTech,
-    monetizationStrategy: `For ${industry.toLowerCase()}, consider: subscription model for recurring revenue, transaction fees if marketplace, freemium model to attract users, and premium features for advanced functionality.`,
-    timeline: timelines[budgetAmount],
-    estimatedCost: costs[budgetAmount],
+    monetizationStrategy: `For ${industry.toLowerCase()}: Start with freemium model to build user base, then implement subscription tiers ($9.99-$49.99/month). Consider transaction fees (2-5%) for marketplace features, premium analytics, and white-label solutions for enterprise clients.`,
+    
+    howItWorks: `Your ${idea} will solve real problems by: 1) Identifying core user pain points in ${industry.toLowerCase()}, 2) Providing intuitive solutions through modern technology, 3) Creating seamless user experiences that save time and increase efficiency, 4) Building community features to enhance engagement and retention.`,
+    
+    competitiveAdvantage: `What makes this unique: Focus on user experience over feature complexity, leverage AI/ML for personalization, implement modern mobile-first design, provide superior customer support, and build strong community features that competitors lack.`,
+    
+    whyItWorks: `This concept succeeds because: ${targetAudience} increasingly demand digital solutions, the ${industry.toLowerCase()} market is growing rapidly, technology costs have decreased making development accessible, and there's proven demand for innovative approaches in this space.`,
+    
+    marketOpportunity: `Market potential: ${industry} sector valued at billions with 15-25% annual growth. Target audience of ${targetAudience.toLowerCase()} represents millions of potential users. Early market entry advantage with room for rapid scaling and geographic expansion.`,
+    timeline: timelines[budgetAmount] || timelines.high,
+    estimatedCost: costs[budgetAmount] || costs.high,
     marketAnalysis: {
       targetMarket: `${targetAudience} represents a growing market segment with increasing demand for digital solutions`,
       competition: `${industry} has established players but room for innovation and niche positioning`,

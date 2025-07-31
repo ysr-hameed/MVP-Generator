@@ -22,6 +22,10 @@ interface MvpPlan {
     hosting?: string;
   };
   monetizationStrategy: string;
+  howItWorks?: string;
+  competitiveAdvantage?: string;
+  whyItWorks?: string;
+  marketOpportunity?: string;
   timeline: {
     mvp: string;
     launch: string;
