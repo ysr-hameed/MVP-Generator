@@ -21,11 +21,7 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
 
-  // Don't show ads if they're disabled globally
-  if (!adSettings?.enableAds) {
-    return null;
-  }
-
+  // Filter ads for this position
   const positionAds = ads.filter((ad: any) => 
     ad.position === position && ad.isActive
   );
@@ -40,7 +36,7 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
     return counts[adSettings?.adCount || 'low'][position] || 1;
   };
 
-  const limitedAds = positionAds.slice(0, getMaxAdsForPosition());
+  const limitedAds = adSettings?.enableAds ? positionAds.slice(0, getMaxAdsForPosition()) : [];
 
   useEffect(() => {
     // Execute ad scripts when component mounts or ads change
@@ -84,9 +80,10 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
         }
       }
     });
-  }, [limitedAds]);
+  }, [limitedAds, mountedAds]);
 
-  if (limitedAds.length === 0) {
+  // Don't show ads if they're disabled globally or no ads available
+  if (!adSettings?.enableAds || limitedAds.length === 0) {
     return null;
   }
 

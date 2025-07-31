@@ -1,4 +1,4 @@
-
+typescript
 import { getStorage } from "../storage";
 
 export class SitemapGenerator {
@@ -6,108 +6,83 @@ export class SitemapGenerator {
 
   static async generateSitemap(): Promise<string> {
     try {
-      const storage = await getStorage();
+      const storage = getStorage();
       const blogs = await storage.getAllBlogs();
-      const currentDate = new Date().toISOString().split('T')[0];
 
       let sitemap = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
-        xmlns:xhtml="http://www.w3.org/1999/xhtml"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
-        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" 
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" 
+        xmlns:xhtml="http://www.w3.org/1999/xhtml" 
+        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0" 
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" 
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">`;
 
-  <!-- Homepage -->
-  <url>
-    <loc>${this.BASE_URL}/</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
-  </url>
+      // Add main pages with proper SEO structure
+      const staticPages = [
+        { url: '/', priority: '1.0', changefreq: 'daily', title: 'MVP Generator AI - Create Business Plans with AI' },
+        { url: '/mvp-generator', priority: '0.9', changefreq: 'weekly', title: 'AI MVP Generator - Business Plan Creator' },
+        { url: '/blog', priority: '0.8', changefreq: 'daily', title: 'Business & Startup Blog - MVP Generator' },
+        { url: '/about', priority: '0.7', changefreq: 'monthly', title: 'About MVP Generator AI' },
+        { url: '/contact', priority: '0.6', changefreq: 'monthly', title: 'Contact MVP Generator AI' }
+      ];
 
-  <!-- MVP Generator -->
-  <url>
-    <loc>${this.BASE_URL}/mvp-generator</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
+      const baseUrl = process.env.SITE_URL || process.env.REPL_URL || 'https://mvp-generator-ai.replit.app';
 
-  <!-- Blog Index -->
-  <url>
-    <loc>${this.BASE_URL}/blog</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- About Page -->
-  <url>
-    <loc>${this.BASE_URL}/about</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Contact Page -->
-  <url>
-    <loc>${this.BASE_URL}/contact</loc>
-    <lastmod>${currentDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-`;
-
-      // Add blog posts
-      for (const blog of blogs) {
-        const blogDate = new Date(blog.createdAt).toISOString().split('T')[0];
-        const slug = this.generateSlug(blog.title);
-        
+      staticPages.forEach(page => {
         sitemap += `
-  <!-- Blog Post: ${blog.title} -->
   <url>
-    <loc>${this.BASE_URL}/blog/${slug}</loc>
-    <lastmod>${blogDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <loc>${baseUrl}${page.url}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`;
+      });
+
+      // Add blog posts with enhanced metadata
+      if (blogs && blogs.length > 0) {
+        blogs.forEach((blog: any) => {
+          const slug = blog.slug || blog.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+          sitemap += `
+  <url>
+    <loc>${baseUrl}/blog/${slug}</loc>
+    <lastmod>${new Date(blog.updatedAt || blog.createdAt).toISOString().split('T')[0]}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
     <news:news>
       <news:publication>
-        <news:name>StartNet AI</news:name>
+        <news:name>MVP Generator AI Blog</news:name>
         <news:language>en</news:language>
       </news:publication>
-      <news:publication_date>${blogDate}</news:publication_date>
-      <news:title>${this.escapeXml(blog.title)}</news:title>
-      <news:keywords>${this.extractKeywords(blog.content).join(', ')}</news:keywords>
-    </news:news>`;
-
-        // Add image sitemap entries if images exist
-        const images = this.extractImages(blog.content);
-        for (const image of images) {
-          sitemap += `
-    <image:image>
-      <image:loc>${image.url}</image:loc>
-      <image:caption>${this.escapeXml(image.caption || blog.title)}</image:caption>
-      <image:title>${this.escapeXml(blog.title)}</image:title>
-    </image:image>`;
-        }
-
-        sitemap += `
+      <news:publication_date>${new Date(blog.createdAt).toISOString().split('T')[0]}</news:publication_date>
+      <news:title>${blog.title}</news:title>
+    </news:news>
   </url>`;
+        });
       }
 
       sitemap += `
 </urlset>`;
 
+      console.log(`✓ Generated sitemap with ${staticPages.length + (blogs?.length || 0)} URLs`);
       return sitemap;
     } catch (error) {
-      console.error("Failed to generate sitemap:", error);
-      return this.generateBasicSitemap();
+      console.error('Error generating sitemap:', error);
+      const baseUrl = process.env.SITE_URL || process.env.REPL_URL || 'https://mvp-generator-ai.replit.app';
+      return `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
     }
   }
 
   private static generateBasicSitemap(): string {
     const currentDate = new Date().toISOString().split('T')[0];
-    
+
     return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
@@ -194,7 +169,7 @@ export class SitemapGenerator {
 
   private static extractImages(content: string): Array<{url: string, caption?: string}> {
     const images: Array<{url: string, caption?: string}> = [];
-    
+
     // Extract markdown images
     const markdownImageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
     let match;
@@ -242,7 +217,7 @@ Allow: /contact/`;
   static async submitToSearchEngines(): Promise<void> {
     try {
       const sitemapUrl = `${this.BASE_URL}/sitemap.xml`;
-      
+
       // Submit to Google
       try {
         const googleResponse = await fetch(

@@ -1,4 +1,3 @@
-
 import { getStorage } from "../storage";
 
 export class ApiKeyManager {
@@ -149,7 +148,7 @@ export class ApiKeyManager {
     try {
       const storage = await getStorage();
       const keys = await storage.getActiveApiKeys(service);
-      
+
       if (keys.length === 0) {
         return null;
       }
@@ -165,6 +164,39 @@ export class ApiKeyManager {
       return keys[0]?.key || null;
     } catch (error) {
       console.error("Failed to rotate API key:", error);
+      return null;
+    }
+  }
+
+  static async getAvailableApiKey(provider: string): Promise<string | null> {
+    try {
+      const storage = getStorage();
+      const keys = await storage.getActiveApiKeys(provider);
+
+      if (keys.length === 0) {
+        console.log(`No active ${provider} API keys found`);
+        return null;
+      }
+
+      // Find a key that hasn't exceeded daily limits and is valid
+      for (const key of keys) {
+        const dailyLimit = provider === "gemini" ? 1000 : 500;
+        if (key.dailyUsage < dailyLimit && key.isActive) {
+          // Basic key format validation
+          if (provider === "gemini" && key.key.startsWith("AIza")) {
+            console.log(`Using ${provider} API key: ${key.key.substring(0, 8)}...`);
+            return key.key;
+          } else if (provider === "unsplash" && key.key.length > 20) {
+            console.log(`Using ${provider} API key: ${key.key.substring(0, 8)}...`);
+            return key.key;
+          }
+        }
+      }
+
+      console.log(`No valid ${provider} API keys available or all have exceeded daily limits`);
+      return null;
+    } catch (error) {
+      console.error(`Failed to get ${provider} API key:`, error);
       return null;
     }
   }
