@@ -3,7 +3,7 @@ import { UnsplashService } from "./unsplashService";
 import { getStorage } from "../storage";
 
 export class EnhancedBlogGenerator {
-  
+
   async generateSinglePost() {
     try {
       const settings = {
@@ -17,7 +17,7 @@ export class EnhancedBlogGenerator {
       };
 
       const posts = await this.generateBlogPosts(1, settings);
-      
+
       if (posts.length > 0) {
         return {
           success: true,
@@ -71,20 +71,53 @@ export class EnhancedBlogGenerator {
     // Generate main blog image first
     let featuredImageUrl = '';
     let contentImages: string[] = [];
-    
+
     if (useUnsplashImages) {
       try {
-        const imageKeywords = this.extractKeywords(selectedTopic);
-        featuredImageUrl = await UnsplashService.getImageUrl(imageKeywords[0], 1200, 600);
-        
+        // Extract meaningful keywords from title
+        const stopWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'how', 'what', 'why', 'when', 'where', 'which', 'that', 'this', 'these', 'those', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'can', 'may', 'might', 'must'];
+
+        const titleWords = selectedTopic.toLowerCase()
+          .replace(/[^\w\s]/g, ' ')
+          .split(' ')
+          .filter(word => word.length > 2 && !stopWords.includes(word))
+          .slice(0, 3);
+
+        // Add topic-based keywords
+        const topicKeywords = [];
+        if (selectedTopic.toLowerCase().includes('business') || selectedTopic.toLowerCase().includes('startup')) {
+          topicKeywords.push('business');
+        }
+        if (selectedTopic.toLowerCase().includes('tech') || selectedTopic.toLowerCase().includes('software')) {
+          topicKeywords.push('technology');
+        }
+        if (selectedTopic.toLowerCase().includes('money') || selectedTopic.toLowerCase().includes('finance')) {
+          topicKeywords.push('finance');
+        }
+        if (selectedTopic.toLowerCase().includes('marketing')) {
+          topicKeywords.push('marketing');
+        }
+
+        const imageKeywords = [...titleWords, ...topicKeywords].slice(0, 2).join(' ') || 'business technology';
+
+        console.log(`Generating image for keywords: "${imageKeywords}"`);
+        featuredImageUrl = await UnsplashService.getImageUrl(imageKeywords, 1200, 600);
+
         // Generate additional images for content sections
-        for (let i = 1; i < Math.min(imageKeywords.length, 4); i++) {
-          const contentImage = await UnsplashService.getImageUrl(imageKeywords[i], 800, 400);
+        for (let i = 1; i < Math.min(imageKeywords.split(' ').length, 4); i++) {
+          const contentImage = await UnsplashService.getImageUrl(imageKeywords.split(' ')[i], 800, 400);
           contentImages.push(contentImage);
         }
       } catch (error) {
-        console.error("Failed to fetch Unsplash images:", error);
-        featuredImageUrl = `https://images.unsplash.com/photo-1551434678-e076c223a692?w=1200&h=600&fit=crop`;
+        console.warn('Failed to generate blog image:', error);
+        // Fallback to a relevant business/tech image
+        const fallbackImages = [
+          'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&h=400&fit=crop&crop=entropy&auto=format&q=80',
+          'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=400&fit=crop&crop=entropy&auto=format&q=80',
+          'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop&crop=entropy&auto=format&q=80',
+          'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&h=400&fit=crop&crop=entropy&auto=format&q=80'
+        ];
+        featuredImageUrl = fallbackImages[Math.floor(Math.random() * fallbackImages.length)];
       }
     }
 
@@ -118,7 +151,7 @@ ${focusOnMvpGenerator ? `
 PRODUCT INTEGRATION:
 - Naturally mention how our MVP Generator tool can help readers
 - Include specific examples of how the tool addresses pain points discussed
-- Add subtle calls-to-action to try the MVP Generator
+- Add subtle calls-to-actions to try the MVP Generator
 - Position the tool as a solution to problems mentioned in the article
 ` : ''}
 
@@ -171,7 +204,7 @@ Focus on providing genuine value to readers while naturally integrating our MVP 
       const response = await geminiService.generateContent(enhancedPrompt);
       const cleanedResponse = response.replace(/```json\s*|\s*```/g, '').trim();
       const blogPost = JSON.parse(cleanedResponse);
-      
+
       // Enhance the blog post with additional metadata
       return {
         ...blogPost,
@@ -194,7 +227,7 @@ Focus on providing genuine value to readers while naturally integrating our MVP 
       "entrepreneurship success",
       "digital transformation"
     ];
-    
+
     // Extract specific keywords from topic
     const topicKeywords = topic.toLowerCase()
       .replace(/[^\w\s]/g, '')
@@ -202,7 +235,7 @@ Focus on providing genuine value to readers while naturally integrating our MVP 
       .filter(word => word.length > 3)
       .slice(0, 3)
       .join(' ');
-    
+
     return [topicKeywords, ...keywords];
   }
 
@@ -212,24 +245,24 @@ Focus on providing genuine value to readers while naturally integrating our MVP 
 
   private calculateSeoScore(blogPost: any): number {
     let score = 0;
-    
+
     // Title optimization
     if (blogPost.title.length >= 30 && blogPost.title.length <= 60) score += 20;
     if (blogPost.title.includes('2025')) score += 10;
-    
+
     // Meta description
     if (blogPost.metaDescription.length >= 150 && blogPost.metaDescription.length <= 160) score += 20;
-    
+
     // Content length
     if (this.estimateWordCount(blogPost.content) >= 2000) score += 20;
-    
+
     // Keywords
     if (blogPost.keywords.length >= 5) score += 15;
-    
+
     // Images
     if (blogPost.imageUrl) score += 10;
     if (blogPost.contentImages.length > 0) score += 5;
-    
+
     return score;
   }
 
@@ -244,12 +277,12 @@ Focus on providing genuine value to readers while naturally integrating our MVP 
       excerpt: `Discover everything you need to know about ${topic.toLowerCase()} in ${year}. This comprehensive guide covers best practices, tools, and strategies for startup success.`,
       content: `
         <h1>${topic} - Complete Guide for ${year}</h1>
-        
+
         <p>Starting a business in ${year} requires careful planning and the right approach. This comprehensive guide will walk you through everything you need to know about ${topic.toLowerCase()}.</p>
-        
+
         <h2>Why This Matters in ${year}</h2>
         <p>The startup landscape has evolved significantly, and understanding modern approaches to MVP development is crucial for success.</p>
-        
+
         <h2>Key Strategies for Success</h2>
         <ul>
           <li>Focus on user validation early and often</li>
@@ -257,10 +290,10 @@ Focus on providing genuine value to readers while naturally integrating our MVP 
           <li>Implement data-driven decision making</li>
           <li>Plan for iterative development cycles</li>
         </ul>
-        
+
         <h2>Tools and Resources</h2>
         <p>Our MVP Generator tool can help you create a comprehensive plan for your startup idea, complete with technology recommendations, timeline, and budget estimates.</p>
-        
+
         <h2>Next Steps</h2>
         <p>Ready to turn your idea into reality? Start by creating a detailed MVP plan that addresses your specific market and requirements.</p>
       `,
@@ -283,26 +316,26 @@ Focus on providing genuine value to readers while naturally integrating our MVP 
   async generateMultiplePosts(count: number = 3): Promise<any[]> {
     const posts = [];
     const usedTopics = new Set();
-    
+
     for (let i = 0; i < count; i++) {
       let topic;
       do {
         topic = this.currentTopics2025[Math.floor(Math.random() * this.currentTopics2025.length)];
       } while (usedTopics.has(topic) && usedTopics.size < this.currentTopics2025.length);
-      
+
       usedTopics.add(topic);
-      
+
       try {
         const post = await this.generateComprehensiveBlogPost(topic, true, true);
         posts.push(post);
-        
+
         // Add delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 2000));
       } catch (error) {
         console.error(`Failed to generate post for topic: ${topic}`, error);
       }
     }
-    
+
     return posts;
   }
 }

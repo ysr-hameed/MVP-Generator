@@ -1,4 +1,3 @@
-
 import { getStorage } from "../storage";
 
 // Unsplash image service for blog content with API key rotation
@@ -6,7 +5,7 @@ export class UnsplashService {
   private static readonly BASE_URL = 'https://api.unsplash.com';
   private static currentKeyIndex = 0;
   private static accessKeys: string[] = [];
-  
+
   // Initialize API keys from database and environment
   private static async initializeApiKeys() {
     try {
@@ -21,7 +20,7 @@ export class UnsplashService {
           process.env.UNSPLASH_ACCESS_KEY_2,
           process.env.UNSPLASH_ACCESS_KEY_3
         ].filter(Boolean) as string[];
-        
+
         this.accessKeys = envKeys;
       }
 
@@ -69,7 +68,7 @@ export class UnsplashService {
     if (this.accessKeys.length === 0) {
       await this.initializeApiKeys();
     }
-    
+
     if (this.accessKeys.length === 0) {
       throw new Error("No Unsplash API keys available");
     }
@@ -89,13 +88,13 @@ export class UnsplashService {
       console.log("Failed to track API usage:", error);
     }
   }
-  
+
   // Generate Unsplash image URL with specific parameters using proper API
   static async getImageUrl(searchTerm: string, width: number = 1200, height: number = 600): Promise<string> {
     let currentKey = await this.getCurrentApiKey();
     let retryCount = 0;
     const maxRetries = 3;
-    
+
     while (retryCount < maxRetries) {
       try {
         // Clean search term
@@ -103,9 +102,9 @@ export class UnsplashService {
           .replace(/[^a-z0-9\s]/g, '')
           .replace(/\s+/g, '+')
           .substring(0, 50); // Limit length
-        
+
         console.log(`Fetching Unsplash image for: ${cleanTerm}`);
-        
+
         // Use Unsplash API for high-quality, relevant images
         const response = await fetch(`${this.BASE_URL}/photos/random?query=${cleanTerm}&orientation=landscape&client_id=${currentKey}`, {
           headers: {
@@ -113,13 +112,13 @@ export class UnsplashService {
             'Accept-Version': 'v1'
           }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
-          
+
           // Track successful API usage
           await this.trackApiUsage(currentKey);
-          
+
           // Return the regular image URL with proper dimensions
           const imageUrl = `${data.urls.raw}&w=${width}&h=${height}&fit=crop&crop=entropy&auto=format&q=80`;
           console.log(`Successfully fetched Unsplash image: ${imageUrl}`);
@@ -143,58 +142,58 @@ export class UnsplashService {
         }
       }
     }
-    
+
     // Enhanced fallback with proper URL structure
     console.log(`Using fallback image source for: ${searchTerm}`);
     const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '%20');
     return `https://source.unsplash.com/${width}x${height}/?${cleanTerm}`;
   }
-  
+
   // Synchronous version for immediate use (fallback method)
   static getImageUrlSync(searchTerm: string, width: number = 1200, height: number = 600): string {
     // Clean search term for URL
     const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '%20');
-    
+
     // Use Unsplash Source API for random images
     return `https://source.unsplash.com/${width}x${height}/?${cleanTerm}`;
   }
-  
+
   // Get hero image for article
   static getHeroImage(topic: string): string {
     const searchTerms = this.extractSearchTerms(topic);
     return this.getImageUrlSync(searchTerms[0] || 'business', 1200, 600);
   }
-  
+
   // Get section images for article content
   static getSectionImages(topic: string, count: number = 3): string[] {
     const searchTerms = this.extractSearchTerms(topic);
     const images: string[] = [];
-    
+
     // Generate different images for sections
     const sectionKeywords = [
       'startup+office', 'technology+innovation', 'business+meeting',
       'mobile+app+development', 'team+collaboration', 'digital+transformation',
       'entrepreneurship', 'product+development', 'user+experience'
     ];
-    
+
     for (let i = 0; i < count; i++) {
       const keyword = searchTerms[i] || sectionKeywords[i] || 'business';
       images.push(this.getImageUrlSync(keyword, 800, 400));
     }
-    
+
     return images;
   }
-  
+
   // Get high-quality image using API (async version)
   static async getHighQualityImage(topic: string, width: number = 1200, height: number = 600): Promise<string> {
     const searchTerms = this.extractSearchTerms(topic);
     return await this.getImageUrl(searchTerms[0] || 'business', width, height);
   }
-  
+
   // Extract relevant search terms from topic
   private static extractSearchTerms(topic: string): string[] {
     const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'how', 'what', 'why', 'when', 'where'];
-    
+
     return topic
       .toLowerCase()
       .replace(/[^\w\s]/g, '')
@@ -202,7 +201,7 @@ export class UnsplashService {
       .filter(word => word.length > 3 && !commonWords.includes(word))
       .slice(0, 5); // Take first 5 relevant terms
   }
-  
+
   // Generate image with specific dimensions for different use cases
   static getCustomImage(searchTerm: string, width: number, height: number): string {
     return this.getImageUrlSync(searchTerm, width, height);

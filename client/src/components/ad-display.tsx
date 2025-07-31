@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
@@ -79,68 +80,134 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const displayAds = (adSettings?.enableAds && positionAds.length > 0) ? 
     positionAds.slice(0, getMaxAdsForPosition()) : [];
 
-  // Simple script injection using HTML-like approach with iframes for isolation
-  const injectAdScript = (adCode: string, container: HTMLElement, adId: string): void => {
+  // Enhanced script injection with proper sizing
+  const injectAdScript = (adCode: string, container: HTMLElement, ad: Advertisement): void => {
     try {
-      // Create iframe for isolated script execution (like HTML)
-      const iframe = document.createElement('iframe');
-      iframe.style.cssText = `
-        width: 100%;
-        height: 100%;
-        border: none;
-        background: transparent;
-        display: block;
-      `;
-      iframe.id = `ad-frame-${adId}`;
+      // Clear container first
+      container.innerHTML = '';
 
-      container.appendChild(iframe);
-
-      // Wait for iframe to load then inject content
-      iframe.onload = () => {
-        try {
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-          if (iframeDoc) {
-            // Create complete HTML document with the ad code
-            const htmlContent = `
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <meta charset="UTF-8">
-                <style>
-                  body { margin: 0; padding: 8px; overflow: hidden; }
-                  * { box-sizing: border-box; }
-                </style>
-              </head>
-              <body>
-                ${adCode}
-              </body>
-              </html>
-            `;
-
-            iframeDoc.open();
-            iframeDoc.write(htmlContent);
-            iframeDoc.close();
-
-            console.log(`✓ Ad loaded successfully: ${adId}`);
-          }
-        } catch (error) {
-          console.error(`Failed to inject ad content for ${adId}:`, error);
-          container.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: #999; border: 1px dashed #ddd; border-radius: 4px;">
-              <p>Advertisement space</p>
-            </div>
-          `;
+      // Get dimensions - use ad dimensions or defaults based on position
+      const getAdDimensions = () => {
+        if (ad.width && ad.height) {
+          return { width: ad.width, height: ad.height };
         }
+
+        // Default sizes based on position
+        const defaultSizes = {
+          'header': { width: 728, height: 90 },
+          'sidebar': { width: 300, height: 250 },
+          'content': { width: 728, height: 90 },
+          'footer': { width: 728, height: 90 },
+          'blog-top': { width: 728, height: 90 },
+          'blog-middle': { width: 336, height: 280 },
+          'blog-bottom': { width: 728, height: 90 },
+          'generator-top': { width: 728, height: 90 },
+          'generator-bottom': { width: 300, height: 250 }
+        };
+
+        return defaultSizes[position as keyof typeof defaultSizes] || { width: 320, height: 100 };
       };
 
-      // Set empty src to trigger onload
-      iframe.src = 'about:blank';
+      const dimensions = getAdDimensions();
+      
+      // Set container size to match ad dimensions
+      container.style.cssText = `
+        width: ${dimensions.width}px;
+        max-width: 100%;
+        height: ${dimensions.height}px;
+        margin: 10px auto;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        background: #fafafa;
+        overflow: hidden;
+        position: relative;
+        display: block;
+      `;
+
+      // Check if it's a script-based ad (like Adsterra)
+      if (adCode.includes('atOptions') || adCode.includes('<script') || adCode.includes('document.write')) {
+        // Create sandbox iframe for script-based ads
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = `
+          width: 100%;
+          height: 100%;
+          border: none;
+          background: transparent;
+          display: block;
+        `;
+        iframe.id = `ad-frame-${ad.id}`;
+        iframe.sandbox = 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation';
+
+        container.appendChild(iframe);
+
+        // Inject content into iframe
+        iframe.onload = () => {
+          try {
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (iframeDoc) {
+              const htmlContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="UTF-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  <style>
+                    body { 
+                      margin: 0; 
+                      padding: 4px; 
+                      overflow: hidden; 
+                      font-family: Arial, sans-serif;
+                      background: transparent;
+                    }
+                    * { box-sizing: border-box; }
+                  </style>
+                </head>
+                <body>
+                  ${adCode}
+                </body>
+                </html>
+              `;
+
+              iframeDoc.open();
+              iframeDoc.write(htmlContent);
+              iframeDoc.close();
+
+              console.log(`✓ Script-based ad loaded: ${ad.name}`);
+            }
+          } catch (error) {
+            console.error(`Failed to inject script ad for ${ad.name}:`, error);
+            container.innerHTML = `
+              <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px;">
+                <span>Advertisement</span>
+              </div>
+            `;
+          }
+        };
+
+        iframe.src = 'about:blank';
+
+      } else {
+        // For HTML-based ads, inject directly
+        const adWrapper = document.createElement('div');
+        adWrapper.style.cssText = `
+          width: 100%;
+          height: 100%;
+          padding: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `;
+        adWrapper.innerHTML = adCode;
+        container.appendChild(adWrapper);
+        
+        console.log(`✓ HTML ad loaded: ${ad.name}`);
+      }
 
     } catch (error) {
-      console.error(`Error creating ad container for ${adId}:`, error);
+      console.error(`Error creating ad container for ${ad.name}:`, error);
       container.innerHTML = `
-        <div style="padding: 20px; text-align: center; color: #999; border: 1px dashed #ddd; border-radius: 4px;">
-          <p>Ad failed to load</p>
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 14px; border: 1px dashed #ccc;">
+          <span>Ad failed to load</span>
         </div>
       `;
     }
@@ -156,32 +223,23 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
 
       displayAds.forEach((ad, index) => {
         try {
-          // Create ad wrapper
-          const adWrapper = document.createElement('div');
-          adWrapper.className = 'ad-wrapper';
-          adWrapper.style.cssText = `
-            width: ${ad.width ? `${ad.width}px` : '100%'};
-            max-width: 100%;
-            height: ${ad.height ? `${ad.height}px` : '250px'};
-            margin: 8px auto;
-            padding: 0;
-            border: 1px solid #e5e5e5;
-            border-radius: 6px;
-            background-color: #fafafa;
-            position: relative;
-            overflow: hidden;
+          // Create individual ad container
+          const adContainer = document.createElement('div');
+          adContainer.className = `ad-slot ad-slot-${ad.id}`;
+          adContainer.style.cssText = `
+            margin-bottom: 20px;
             display: block;
           `;
 
-          container.appendChild(adWrapper);
+          container.appendChild(adContainer);
 
-          // Inject the ad with a small delay
+          // Inject the ad with a delay for better loading
           setTimeout(() => {
-            injectAdScript(ad.adCode, adWrapper, ad.id);
-          }, 100 * index);
+            injectAdScript(ad.adCode, adContainer, ad);
+          }, 200 * index);
 
         } catch (error) {
-          console.error(`Error creating ad container for ${ad.name}:`, error);
+          console.error(`Error setting up ad container for ${ad.name}:`, error);
         }
       });
 
@@ -223,7 +281,7 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
 
       <div 
         ref={adContainerRef}
-        className="space-y-2"
+        className="ads-wrapper"
         style={{ minHeight: '60px' }}
       />
     </div>
