@@ -53,16 +53,16 @@ router.get("/api/advertisements", async (req, res) => {
         name: "Header Ad",
         position: "header",
         isActive: true,
-        adCode: `<script type="text/javascript">
-	atOptions = {
-		'key' : '55520cbc4a650e9153cfafbd7c723bc8',
-		'format' : 'iframe',
-		'height' : 50,
-		'width' : 320,
-		'params' : {}
-	};
-	document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
-</script>`,
+        adCode: `
+var atOptions = {
+  'key': '55520cbc4a650e9153cfafbd7c723bc8',
+  'format': 'iframe',
+  'height': 50,
+  'width': 320,
+  'params': {}
+};
+document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
+`,
         width: 320,
         height: 50
       },
@@ -71,16 +71,16 @@ router.get("/api/advertisements", async (req, res) => {
         name: "Sidebar Ad 1",
         position: "sidebar",
         isActive: true,
-        adCode: `<script type="text/javascript">
-	atOptions = {
-		'key' : '9a3ef597fec948bcaa967a2b31ad6309',
-		'format' : 'iframe',
-		'height' : 250,
-		'width' : 300,
-		'params' : {}
-	};
-	document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
-</script>`,
+        adCode: `
+var atOptions = {
+  'key': '9a3ef597fec948bcaa967a2b31ad6309',
+  'format': 'iframe',
+  'height': 250,
+  'width': 300,
+  'params': {}
+};
+document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
+`,
         width: 300,
         height: 250
       },
@@ -102,16 +102,16 @@ router.get("/api/advertisements", async (req, res) => {
         name: "Content Ad",
         position: "content",
         isActive: true,
-        adCode: `<script type="text/javascript">
-	atOptions = {
-		'key' : '55520cbc4a650e9153cfafbd7c723bc8',
-		'format' : 'iframe',
-		'height' : 90,
-		'width' : 728,
-		'params' : {}
-	};
-	document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
-</script>`,
+        adCode: `
+var atOptions = {
+  'key': '55520cbc4a650e9153cfafbd7c723bc8',
+  'format': 'iframe',
+  'height': 90,
+  'width': 728,
+  'params': {}
+};
+document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
+`,
         width: 728,
         height: 90
       },

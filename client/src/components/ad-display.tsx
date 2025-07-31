@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
@@ -27,6 +26,8 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const adContainerRef = useRef<HTMLDivElement>(null);
   const [adErrors, setAdErrors] = useState<string[]>([]);
   const [loadedScripts, setLoadedScripts] = useState<Set<string>>(new Set());
+  const [adsLoaded, setAdsLoaded] = useState(false);
+  const processedAdsRef = useRef<Set<string>>(new Set());
 
   // Get ad settings from database
   const { data: adSettings } = useQuery<AdSettings>({
@@ -56,7 +57,7 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   // Apply ad count limits based on settings
   const getMaxAdsForPosition = () => {
     if (!adSettings) return 1;
-    
+
     const counts = {
       low: { 
         header: 1, sidebar: 1, content: 1, footer: 1,
@@ -81,159 +82,150 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const displayAds = (adSettings?.enableAds && positionAds.length > 0) ? 
     positionAds.slice(0, getMaxAdsForPosition()) : [];
 
-  // Enhanced script injection with proper execution
-  const injectAndExecuteScript = (script: HTMLScriptElement, containerId: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const newScript = document.createElement('script');
-      
-      if (script.src) {
-        // External script
-        const srcUrl = script.src.startsWith('//') ? `https:${script.src}` : script.src;
-        
-        // Check if script is already loaded
-        if (loadedScripts.has(srcUrl)) {
-          console.log('External script already loaded:', srcUrl);
-          resolve();
-          return;
-        }
-        
-        newScript.src = srcUrl;
-        newScript.async = true;
-        newScript.defer = true;
-        
-        newScript.onload = () => {
-          console.log('External ad script loaded:', srcUrl);
-          setLoadedScripts(prev => new Set(prev).add(srcUrl));
-          resolve();
+  // Fixed script injection that handles document.write properly
+  const injectAdScript = (adCode: string, container: HTMLElement): Promise<void> => {
+    return new Promise((resolve) => {
+      try {
+        // Create a unique container ID
+        const containerId = `ad-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        container.id = containerId;
+
+        // Replace document.write with our custom function
+        const originalWrite = document.write;
+        const originalWriteln = document.writeln;
+        let capturedContent = '';
+
+        // Override document.write to capture content
+        document.write = function(content: string) {
+          capturedContent += content;
         };
-        
-        newScript.onerror = (error) => {
-          console.error('Ad script failed to load:', srcUrl, error);
-          setAdErrors(prev => [...prev, `Failed to load: ${srcUrl}`]);
-          reject(error);
+
+        document.writeln = function(content: string) {
+          capturedContent += content + '\n';
         };
-        
-        document.head.appendChild(newScript);
-      } else if (script.textContent) {
-        // Inline script
+
         try {
-          console.log('Executing inline ad script for container:', containerId);
-          
-          // Create a safer execution context
-          const scriptContent = script.textContent;
-          newScript.textContent = `
-            try {
-              ${scriptContent}
-            } catch (error) {
-              console.error('Ad script execution error:', error);
-            }
-          `;
-          
-          document.head.appendChild(newScript);
-          
-          // Remove the script after execution
-          setTimeout(() => {
-            if (newScript.parentNode) {
-              newScript.parentNode.removeChild(newScript);
-            }
-          }, 100);
-          
-          resolve();
+          // Execute the ad script
+          const scriptFunction = new Function(adCode);
+          scriptFunction();
+
+          // If content was captured, inject it
+          if (capturedContent) {
+            container.innerHTML = capturedContent;
+
+            // Execute any scripts in the captured content
+            const scripts = container.querySelectorAll('script');
+            scripts.forEach((script) => {
+              if (script.src) {
+                const newScript = document.createElement('script');
+                newScript.src = script.src;
+                newScript.async = true;
+                document.head.appendChild(newScript);
+              }
+            });
+          } else {
+            // If no content captured, try direct injection
+            container.innerHTML = adCode;
+          }
+
         } catch (error) {
-          console.error('Inline script execution error:', error);
-          setAdErrors(prev => [...prev, `Script execution failed: ${containerId}`]);
-          reject(error);
+          console.error('Ad script execution error:', error);
+          // Fallback: try direct HTML injection
+          container.innerHTML = adCode;
+        } finally {
+          // Restore original document.write
+          document.write = originalWrite;
+          document.writeln = originalWriteln;
         }
-      } else {
+
+        // Mark as loaded after a short delay
+        setTimeout(() => {
+          resolve();
+        }, 1000);
+
+      } catch (error) {
+        console.error('Ad injection error:', error);
         resolve();
       }
     });
   };
 
-  // Enhanced ad injection with better error handling
+  // Main ad loading effect
   useEffect(() => {
-    if (displayAds.length > 0 && adContainerRef.current) {
+    if (displayAds.length > 0 && adContainerRef.current && !adsLoaded) {
       const container = adContainerRef.current;
-      
-      // Clear previous ads
+
+      // Clear previous content
       container.innerHTML = '';
       setAdErrors([]);
-      
-      displayAds.forEach(async (ad, index) => {
-        try {
-          // Create a unique container for each ad
-          const adWrapper = document.createElement('div');
-          const containerId = `ad-container-${ad.id}-${index}`;
-          adWrapper.id = containerId;
-          
-          // Set container styles
-          adWrapper.style.width = ad.width ? `${ad.width}px` : '100%';
-          adWrapper.style.maxWidth = '100%';
-          adWrapper.style.height = ad.height ? `${ad.height}px` : 'auto';
-          adWrapper.style.minHeight = '50px';
-          adWrapper.style.margin = '8px auto';
-          adWrapper.style.border = '1px solid #e5e5e5';
-          adWrapper.style.borderRadius = '6px';
-          adWrapper.style.padding = '8px';
-          adWrapper.style.backgroundColor = '#fafafa';
-          adWrapper.style.position = 'relative';
-          adWrapper.style.overflow = 'hidden';
-          adWrapper.style.display = 'flex';
-          adWrapper.style.alignItems = 'center';
-          adWrapper.style.justifyContent = 'center';
-          
-          // Add loading indicator
-          adWrapper.innerHTML = '<div style="color: #666; font-size: 12px;">Loading ad...</div>';
-          
-          // Append to container first
-          container.appendChild(adWrapper);
-          
-          // Small delay to ensure DOM is ready
-          setTimeout(async () => {
-            try {
-              // Inject the raw ad code
-              adWrapper.innerHTML = ad.adCode;
-              
-              // Find and execute scripts
-              const scripts = adWrapper.querySelectorAll('script');
-              const scriptPromises: Promise<void>[] = [];
-              
-              scripts.forEach((oldScript) => {
-                scriptPromises.push(injectAndExecuteScript(oldScript, containerId));
-                // Remove the old script tag from the ad container
-                oldScript.remove();
-              });
-              
-              // Wait for all scripts to load/execute
-              await Promise.allSettled(scriptPromises);
-              
-              console.log(`Ad successfully injected: ${ad.name} at position ${position}`);
-              
-              // Remove loading state after a short delay
-              setTimeout(() => {
-                const loadingDiv = adWrapper.querySelector('div[style*="Loading ad"]');
-                if (loadingDiv) {
-                  loadingDiv.remove();
-                }
-              }, 2000);
-              
-            } catch (error) {
-              console.error(`Error processing ad ${ad.name}:`, error);
-              adWrapper.innerHTML = `
-                <div style="color: #999; font-size: 11px; text-align: center; padding: 10px;">
-                  Ad failed to load: ${ad.name}
-                </div>
-              `;
-              setAdErrors(prev => [...prev, `Failed to load ad: ${ad.name}`]);
-            }
-          }, 100 * index); // Stagger ad loading
-          
-        } catch (error) {
-          console.error(`Error creating ad container for ${ad.name}:`, error);
+
+      const loadAds = async () => {
+        for (let i = 0; i < displayAds.length; i++) {
+          const ad = displayAds[i];
+          const adKey = `${ad.id}-${position}`;
+
+          // Skip if already processed
+          if (processedAdsRef.current.has(adKey)) {
+            continue;
+          }
+
+          try {
+            // Create ad wrapper
+            const adWrapper = document.createElement('div');
+            adWrapper.className = 'ad-wrapper';
+            adWrapper.style.cssText = `
+              width: ${ad.width ? `${ad.width}px` : '100%'};
+              max-width: 100%;
+              height: ${ad.height ? `${ad.height}px` : 'auto'};
+              min-height: 60px;
+              margin: 8px auto;
+              padding: 8px;
+              border: 1px solid #e5e5e5;
+              border-radius: 6px;
+              background-color: #fafafa;
+              position: relative;
+              overflow: hidden;
+              display: block;
+            `;
+
+            // Add loading indicator
+            adWrapper.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 12px;">Loading ad...</div>';
+
+            container.appendChild(adWrapper);
+
+            // Inject the ad after a short delay
+            setTimeout(async () => {
+              try {
+                await injectAdScript(ad.adCode, adWrapper);
+                processedAdsRef.current.add(adKey);
+                console.log(`Ad loaded successfully: ${ad.name}`);
+              } catch (error) {
+                console.error(`Failed to load ad ${ad.name}:`, error);
+                adWrapper.innerHTML = `
+                  <div style="display: flex; align-items: center; justify-content: center; height: 60px; color: #999; font-size: 11px;">
+                    Ad failed to load
+                  </div>
+                `;
+                setAdErrors(prev => [...prev, `Failed to load: ${ad.name}`]);
+              }
+            }, 100 * i);
+          } catch (error) {
+            console.error(`Error creating ad container for ${ad.name}:`, error);
+          }
         }
-      });
+
+        setAdsLoaded(true);
+      };
+
+      loadAds();
     }
-  }, [displayAds, loadedScripts]);
+  }, [displayAds, adsLoaded, position]);
+
+  // Reset when ads change
+  useEffect(() => {
+    setAdsLoaded(false);
+    processedAdsRef.current.clear();
+  }, [displayAds.length, displayAds.map(ad => ad.id).join(',')]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -241,6 +233,7 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
       if (adContainerRef.current) {
         adContainerRef.current.innerHTML = '';
       }
+      processedAdsRef.current.clear();
     };
   }, []);
 
@@ -261,13 +254,13 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
           Advertisement
         </div>
       )}
-      
+
       <div 
         ref={adContainerRef}
         className="space-y-2"
         style={{ minHeight: '60px' }}
       />
-      
+
       {/* Debug info in development */}
       {process.env.NODE_ENV === 'development' && adErrors.length > 0 && (
         <div className="text-xs text-red-500 mt-2">
