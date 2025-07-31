@@ -228,7 +228,7 @@ Make recommendations specific to ${currentYear} trends and technologies. Be prac
 `;
 
     try {
-      const response = await geminiService.generateContent(enhancedPrompt);
+      const response = await geminiService.generateText(enhancedPrompt);
       const cleanedResponse = response.replace(/```json\s*|\s*```/g, '').trim();
       return JSON.parse(cleanedResponse) as EnhancedMvpPlan;
     } catch (error) {

@@ -121,7 +121,6 @@ export class ApiKeyManager {
         if (hoursSinceReset >= 24) {
           await storage.updateApiKey(key.id, {
             dailyUsage: 0,
-            lastReset: now,
             isActive: true
           });
           console.log(`✓ Reset daily usage for API key ${key.id.substring(0, 8)}...`);
@@ -141,7 +140,7 @@ export class ApiKeyManager {
       const keyData = await storage.getApiKeyByValue(apiKey);
 
       if (keyData) {
-        const newUsage = keyData.dailyUsage + 1;
+        const newUsage = (keyData.dailyUsage || 0) + 1;
         const dailyLimit = keyData.provider === "gemini" ? 1000 : 500;
         const isActive = newUsage < dailyLimit;
 
@@ -271,7 +270,7 @@ export class ApiKeyManager {
       // Find the next available key with lowest usage
       const availableKeys = keys.filter(key => {
         const dailyLimit = provider === "gemini" ? 1000 : 500;
-        const currentUsage = this.keyUsageCache.get(key.key) || key.dailyUsage;
+        const currentUsage = this.keyUsageCache.get(key.key) || (key.dailyUsage || 0);
         return currentUsage < dailyLimit && key.isActive;
       });
 
@@ -282,8 +281,8 @@ export class ApiKeyManager {
 
       // Sort by usage and return the one with lowest usage
       availableKeys.sort((a, b) => {
-        const usageA = this.keyUsageCache.get(a.key) || a.dailyUsage;
-        const usageB = this.keyUsageCache.get(b.key) || b.dailyUsage;
+        const usageA = this.keyUsageCache.get(a.key) || (a.dailyUsage || 0);
+        const usageB = this.keyUsageCache.get(b.key) || (b.dailyUsage || 0);
         return usageA - usageB;
       });
 
@@ -307,9 +306,9 @@ export class ApiKeyManager {
         active: keys.filter(k => k.isActive).length,
         dailyLimitReached: keys.filter(k => {
           const limit = provider === "gemini" ? 1000 : 500;
-          return k.dailyUsage >= limit;
+          return (k.dailyUsage || 0) >= limit;
         }).length,
-        totalUsage: keys.reduce((sum, k) => sum + k.dailyUsage, 0)
+        totalUsage: keys.reduce((sum, k) => sum + (k.dailyUsage || 0), 0)
       };
 
       return stats;

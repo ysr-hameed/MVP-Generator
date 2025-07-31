@@ -10,6 +10,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### July 31, 2025 - Project Migration and Enhanced API Systems
+- **Database Migration**: Successfully connected to external Neon PostgreSQL database with full API key management
+- **Enhanced API Rotation**: Implemented intelligent API key rotation with usage tracking and automatic failover
+- **Advanced PDF Export**: Created comprehensive PDF export system with professional formatting and complete plan details
+- **Enhanced Copy Functionality**: Improved copy-to-clipboard with structured, detailed MVP plan text
+- **TypeScript Improvements**: Fixed LSP diagnostics and type safety issues across components
+- **Gemini Service Fix**: Resolved method name issues for proper AI integration
+
 ### July 30, 2025 - Project Migration and Feature Enhancements
 - **Project Migration Completed**: Successfully migrated from Replit Agent to standard Replit environment
 - **Database Setup**: Configured PostgreSQL with all required tables and proper schema

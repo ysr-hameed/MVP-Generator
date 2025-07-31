@@ -26,6 +26,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { EnhancedPdfExport } from "@/components/enhanced-pdf-export";
 
 interface EnhancedMvpResultsProps {
   mvpPlan: any;
@@ -127,24 +128,7 @@ ${mvpPlan.nextSteps?.immediate?.map((step: string) => `• ${step}`).join('\n') 
           <p className="text-muted-foreground mt-1">Comprehensive strategy for: {idea}</p>
         </div>
         
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={copyToClipboard}>
-            <Copy className="w-4 h-4 mr-2" />
-            Copy
-          </Button>
-          <Button variant="outline" size="sm" onClick={shareViaMail}>
-            <Mail className="w-4 h-4 mr-2" />
-            Share
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportToPDF}>
-            <Download className="w-4 h-4 mr-2" />
-            PDF
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="w-4 h-4 mr-2" />
-            Print
-          </Button>
-        </div>
+        <EnhancedPdfExport mvpPlan={mvpPlan} idea={idea} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
