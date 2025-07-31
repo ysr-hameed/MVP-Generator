@@ -16,6 +16,7 @@ import Contact from "@/pages/contact";
 import AdminLogin from "@/pages/admin/login";
 import AdminDashboard from "@/pages/admin/dashboard";
 import { useEffect } from "react";
+import SEOHead from "./components/seo-head";
 
 function AnalyticsTracker() {
   const [location] = useLocation();

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React from 'react';
 
 interface SEOHeadProps {
   title?: string;
@@ -8,61 +8,52 @@ interface SEOHeadProps {
   url?: string;
 }
 
-export function SEOHead({ 
-  title = "MVP Generator AI - Turn Ideas into Actionable Business Plans",
-  description = "Generate comprehensive MVP plans using AI. Get detailed roadmaps, technical requirements, and business strategies for your startup idea.",
-  keywords = "MVP generator, startup ideas, business plan, AI planning, startup roadmap",
+const SEOHead: React.FC<SEOHeadProps> = ({
+  title = "MVP Generator - Build Your Startup Idea",
+  description = "Transform your startup ideas into comprehensive MVP plans with our AI-powered generator. Get detailed business plans, technical specifications, and actionable insights.",
+  keywords = "MVP, startup, business plan, AI generator, entrepreneur, product development",
   image = "/og-image.jpg",
-  url = "https://mvpgenerator.ai"
-}: SEOHeadProps) {
-  useEffect(() => {
+  url = typeof window !== 'undefined' ? window.location.href : ""
+}) => {
+  React.useEffect(() => {
     // Update document title
     document.title = title;
 
     // Update meta tags
-    const updateMetaTag = (property: string, content: string) => {
-      let element = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute('property', property);
-        document.head.appendChild(element);
+    const updateMeta = (name: string, content: string) => {
+      let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.name = name;
+        document.head.appendChild(meta);
       }
-      element.content = content;
+      meta.content = content;
     };
 
-    const updateMetaName = (name: string, content: string) => {
-      let element = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
-      if (!element) {
-        element = document.createElement('meta');
-        element.setAttribute('name', name);
-        document.head.appendChild(element);
+    const updateProperty = (property: string, content: string) => {
+      let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+      if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('property', property);
+        document.head.appendChild(meta);
       }
-      element.content = content;
+      meta.content = content;
     };
 
-    // Basic meta tags
-    updateMetaName('description', description);
-    updateMetaName('keywords', keywords);
-
-    // Open Graph tags
-    updateMetaTag('og:title', title);
-    updateMetaTag('og:description', description);
-    updateMetaTag('og:image', image);
-    updateMetaTag('og:url', url);
-    updateMetaTag('og:type', 'website');
-
-    // Twitter Card tags
-    updateMetaName('twitter:card', 'summary_large_image');
-    updateMetaName('twitter:title', title);
-    updateMetaName('twitter:description', description);
-    updateMetaName('twitter:image', image);
-
-    // Additional SEO tags
-    updateMetaName('robots', 'index, follow');
-    updateMetaName('author', 'MVP Generator AI');
-    updateMetaTag('og:site_name', 'MVP Generator AI');
-
+    updateMeta('description', description);
+    updateMeta('keywords', keywords);
+    updateProperty('og:title', title);
+    updateProperty('og:description', description);
+    updateProperty('og:image', image);
+    updateProperty('og:url', url);
+    updateProperty('og:type', 'website');
+    updateMeta('twitter:card', 'summary_large_image');
+    updateMeta('twitter:title', title);
+    updateMeta('twitter:description', description);
+    updateMeta('twitter:image', image);
   }, [title, description, keywords, image, url]);
 
   return null;
-}
+};
+
+export default SEOHead;
