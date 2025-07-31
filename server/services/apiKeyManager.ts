@@ -1,3 +1,4 @@
+
 import { getStorage } from "../storage";
 
 export class ApiKeyManager {
@@ -27,67 +28,70 @@ export class ApiKeyManager {
   }
 
   private static async initializeGeminiKeys(storage: any) {
-
+    try {
       // Add the primary API key from environment
-    if (process.env.GEMINI_API_KEY) {
-      await storage.createApiKey({
-        provider: "gemini",
-        key: process.env.GEMINI_API_KEY,
-        isActive: true,
-        dailyUsage: 0,
-      });
-      console.log("✓ Added primary Gemini API key to database");
-    }
-
-    // Add additional API keys if they exist
-    const additionalKeys = [
-      process.env.GEMINI_API_KEY_2,
-      process.env.GEMINI_API_KEY_3,
-      process.env.GEMINI_API_KEY_4,
-      process.env.GEMINI_API_KEY_5
-    ].filter(Boolean);
-
-    for (const key of additionalKeys) {
-      if (key) {
+      if (process.env.GEMINI_API_KEY) {
         await storage.createApiKey({
           provider: "gemini",
-          key: key,
+          key: process.env.GEMINI_API_KEY,
           isActive: true,
           dailyUsage: 0,
         });
-        console.log("✓ Added additional Gemini API key to database");
+        console.log("✓ Added primary Gemini API key to database");
       }
-    }
 
-    const totalGeminiKeys = await storage.getActiveApiKeys("gemini");
-    console.log(`✓ Total Gemini API keys configured: ${totalGeminiKeys.length}`);
+      // Add additional API keys if they exist
+      const additionalKeys = [
+        process.env.GEMINI_API_KEY_2,
+        process.env.GEMINI_API_KEY_3,
+        process.env.GEMINI_API_KEY_4,
+        process.env.GEMINI_API_KEY_5
+      ].filter(Boolean);
+
+      for (const key of additionalKeys) {
+        if (key) {
+          await storage.createApiKey({
+            provider: "gemini",
+            key: key,
+            isActive: true,
+            dailyUsage: 0,
+          });
+          console.log("✓ Added additional Gemini API key to database");
+        }
+      }
+
+      const totalGeminiKeys = await storage.getActiveApiKeys("gemini");
+      console.log(`✓ Total Gemini API keys configured: ${totalGeminiKeys.length}`);
+    } catch (error) {
+      console.error("Failed to initialize Gemini keys:", error);
+    }
   }
 
   private static async initializeUnsplashKeys(storage: any) {
-    // Add Unsplash API keys from environment
-    const unsplashKeys = [
-      process.env.UNSPLASH_ACCESS_KEY,
-      process.env.UNSPLASH_ACCESS_KEY_2,
-      process.env.UNSPLASH_ACCESS_KEY_3
-    ].filter(Boolean);
+    try {
+      // Add Unsplash API keys from environment
+      const unsplashKeys = [
+        process.env.UNSPLASH_ACCESS_KEY,
+        process.env.UNSPLASH_ACCESS_KEY_2,
+        process.env.UNSPLASH_ACCESS_KEY_3
+      ].filter(Boolean);
 
-    for (const key of unsplashKeys) {
-      if (key) {
-        await storage.createApiKey({
-          provider: "unsplash",
-          key: key,
-          isActive: true,
-          dailyUsage: 0,
-        });
-        console.log("✓ Added Unsplash API key to database");
+      for (const key of unsplashKeys) {
+        if (key) {
+          await storage.createApiKey({
+            provider: "unsplash",
+            key: key,
+            isActive: true,
+            dailyUsage: 0,
+          });
+          console.log("✓ Added Unsplash API key to database");
+        }
       }
-    }
 
-    const totalUnsplashKeys = await storage.getActiveApiKeys("unsplash");
-    console.log(`✓ Total Unsplash API keys configured: ${totalUnsplashKeys.length}`);
-
+      const totalUnsplashKeys = await storage.getActiveApiKeys("unsplash");
+      console.log(`✓ Total Unsplash API keys configured: ${totalUnsplashKeys.length}`);
     } catch (error) {
-      console.error("Failed to initialize API keys:", error);
+      console.error("Failed to initialize Unsplash keys:", error);
     }
   }
 
