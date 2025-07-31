@@ -170,7 +170,7 @@ export class ApiKeyManager {
 
   static async getAvailableApiKey(provider: string): Promise<string | null> {
     try {
-      const storage = getStorage();
+      const storage = await getStorage();
       const keys = await storage.getActiveApiKeys(provider);
 
       if (keys.length === 0) {

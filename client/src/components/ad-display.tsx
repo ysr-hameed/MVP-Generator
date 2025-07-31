@@ -46,34 +46,39 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
           // Mark as mounted immediately to prevent duplicate execution
           setMountedAds(prev => new Set([...prev, ad.id]));
           
-          if (ad.adCode && ad.adCode.includes('<script')) {
-            // Create a temporary div to parse the ad code
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = ad.adCode;
-            
-            // Find and execute scripts
-            const scripts = tempDiv.getElementsByTagName('script');
-            Array.from(scripts).forEach(script => {
-              if (script.src) {
-                // External script
-                const newScript = document.createElement('script');
-                newScript.src = script.src;
-                newScript.async = true;
-                newScript.defer = true;
-                // Add error handling
-                newScript.onerror = () => console.log('Ad script failed to load:', script.src);
-                document.head.appendChild(newScript);
-              } else if (script.textContent && script.textContent.trim()) {
-                // Inline script with error handling
-                try {
-                  const newScript = document.createElement('script');
-                  newScript.textContent = script.textContent;
-                  document.body.appendChild(newScript);
-                } catch (scriptError) {
-                  console.error('Error executing inline script:', scriptError);
-                }
+          if (ad.adCode && ad.adCode.trim()) {
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+              if (ad.adCode.includes('<script')) {
+                // Create a temporary div to parse the ad code
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = ad.adCode;
+                
+                // Find and execute scripts
+                const scripts = tempDiv.getElementsByTagName('script');
+                Array.from(scripts).forEach(script => {
+                  if (script.src) {
+                    // External script
+                    const newScript = document.createElement('script');
+                    newScript.src = script.src;
+                    newScript.async = true;
+                    newScript.defer = true;
+                    newScript.onload = () => console.log('Ad script loaded:', script.src);
+                    newScript.onerror = () => console.log('Ad script failed to load:', script.src);
+                    document.head.appendChild(newScript);
+                  } else if (script.textContent && script.textContent.trim()) {
+                    // Inline script with error handling
+                    try {
+                      const newScript = document.createElement('script');
+                      newScript.textContent = script.textContent;
+                      document.body.appendChild(newScript);
+                    } catch (scriptError) {
+                      console.error('Error executing inline script:', scriptError);
+                    }
+                  }
+                });
               }
-            });
+            }, 100);
           }
         } catch (error) {
           console.error('Error executing ad script:', error);

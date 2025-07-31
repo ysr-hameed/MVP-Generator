@@ -151,9 +151,9 @@ CONTENT FORMATTING REQUIREMENTS:
         console.log('Failed to get high quality image, using fallback');
         content.imageUrl = UnsplashService.getHeroImage(topic);
       }
-      
+
       content.content = await this.enhanceContentWithImages(content.content, topic);
-      
+
       // Add additional humanization touches
       content.content = this.addHumanTouches(content.content, affiliateLinks);
 
@@ -233,7 +233,7 @@ CONTENT FORMATTING REQUIREMENTS:
     // Get section images using API for better quality
     const sectionImages: string[] = [];
     const searchTerms = this.extractSearchTerms(topic);
-    
+
     try {
       for (let i = 0; i < 3; i++) {
         const term = searchTerms[i] || `business ${i + 1}`;
@@ -244,34 +244,34 @@ CONTENT FORMATTING REQUIREMENTS:
       console.log('Failed to get high quality section images, using fallback');
       sectionImages.push(...UnsplashService.getSectionImages(topic, 3));
     }
-    
+
     // Convert markdown/plain content to HTML with images
     let htmlContent = content;
-    
+
     // If content is in markdown format, convert key elements to HTML
     if (content.includes('#')) {
       // Convert headings
       htmlContent = htmlContent.replace(/^# (.*$)/gm, '<h1 class="article-title">$1</h1>');
       htmlContent = htmlContent.replace(/^## (.*$)/gm, '<h2 class="section-heading">$1</h2>');
       htmlContent = htmlContent.replace(/^### (.*$)/gm, '<h3 class="subsection-heading">$1</h3>');
-      
+
       // Convert lists
       htmlContent = htmlContent.replace(/^\- (.*$)/gm, '<li>$1</li>');
       htmlContent = htmlContent.replace(/(<li>.*<\/li>)/s, '<ul class="styled-list">$1</ul>');
-      
+
       // Convert bold text
       htmlContent = htmlContent.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
+
       // Convert italic text
       htmlContent = htmlContent.replace(/\*(.*?)\*/g, '<em>$1</em>');
     }
-    
+
     // Add hero image at the beginning
     const heroImage = UnsplashService.getHeroImage(topic);
     htmlContent = `<div class="article-hero">
       <img src="${heroImage}" alt="${topic}" class="hero-image" style="width: 100%; height: 400px; object-fit: cover; border-radius: 12px; margin-bottom: 2rem;" />
     </div>\n\n${htmlContent}`;
-    
+
     // Insert section images throughout the content
     const sections = htmlContent.split('<h2');
     if (sections.length > 1) {
@@ -284,17 +284,17 @@ CONTENT FORMATTING REQUIREMENTS:
       }
       htmlContent = sections.join('');
     }
-    
+
     // Add proper paragraph tags
     htmlContent = htmlContent.replace(/\n\n([^<\n].*?)(?=\n\n|$)/g, '\n\n<p class="article-paragraph">$1</p>');
-    
+
     // Add call-to-action section
     htmlContent += `\n\n<div class="cta-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin: 2rem 0;">
       <h3 style="color: white; margin-bottom: 1rem;">Ready to Build Your MVP?</h3>
       <p style="margin-bottom: 1.5rem;">Use our MVP Generator AI to create a comprehensive plan tailored to your specific idea and industry.</p>
       <a href="/mvp-generator" style="background: white; color: #667eea; padding: 0.75rem 2rem; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">Generate Your MVP Plan</a>
     </div>`;
-    
+
     return htmlContent;
   }
 
@@ -339,7 +339,7 @@ CONTENT FORMATTING REQUIREMENTS:
 
   private extractSearchTerms(topic: string): string[] {
     const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'how', 'what', 'why', 'when', 'where'];
-    
+
     return topic
       .toLowerCase()
       .replace(/[^\w\s]/g, '')

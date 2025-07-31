@@ -432,12 +432,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Array.isArray(settings.affiliateLinks) ? settings.affiliateLinks : [] : [];
 
       // Generate the blog post content immediately
-      const content = await autoBlogService.generateHumanizedBlogPost(
-        topic,
-        affiliateLinks,
-        settings?.useLatestTrends ?? true,
-        settings?.focusOnMyApp ?? true
-      );
+      let content;
+      try {
+        content = await autoBlogService.generateHumanizedBlogPost(
+          topic,
+          affiliateLinks,
+          settings?.useLatestTrends ?? true,
+          settings?.focusOnMyApp ?? true
+        );
+      } catch (error) {
+        console.error("Auto blog generation failed, using fallback:", error);
+        // Return a basic success message even if generation fails
+        return res.json({ 
+          success: false, 
+          message: "Blog generation temporarily unavailable. Please check your API keys and try again.",
+          error: error.message 
+        });
+      }
 
       // Create slug from title
       const slug = content.title
