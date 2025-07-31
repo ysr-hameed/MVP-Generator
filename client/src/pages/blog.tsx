@@ -99,11 +99,11 @@ export default function Blog() {
                     <div className="grid md:grid-cols-2 gap-0">
                       <div className="relative">
                         <img 
-                          src={featuredPost.imageUrl || "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80"} 
+                          src={featuredPost.imageUrl || "https://source.unsplash.com/1200x600/?startup,business"} 
                           alt={featuredPost.title}
                           className="w-full h-64 md:h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.src = "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80";
+                            e.currentTarget.src = "https://source.unsplash.com/1200x600/?technology,business";
                           }}
                         />
                         <Badge className="absolute top-4 left-4 gradient-primary text-white">
@@ -186,11 +186,11 @@ export default function Blog() {
                   <Card key={post.id} className="blog-card cursor-pointer" onClick={() => handleReadMore(post.slug)}>
                     <div className="relative">
                       <img 
-                        src={post.imageUrl || "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80"} 
+                        src={post.imageUrl || "https://source.unsplash.com/800x400/?startup,business"} 
                         alt={post.title}
                         className="w-full h-48 object-cover"
                         onError={(e) => {
-                          e.currentTarget.src = "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80";
+                          e.currentTarget.src = "https://source.unsplash.com/800x400/?technology,innovation";
                         }}
                       />
                     </div>

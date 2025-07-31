@@ -1,7 +1,7 @@
 // Unsplash image service for blog content
 export class UnsplashService {
   private static readonly BASE_URL = 'https://api.unsplash.com';
-  private static readonly ACCESS_KEY = '5Whf8VZKlSygYOSPFwAYaUEFwGBK-ZODFBn1vxguRgA';
+  private static readonly ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY || '5Whf8VZKlSygYOSPFwAYaUEFwGBK-ZODFBn1vxguRgA';
   
   // Generate Unsplash image URL with specific parameters using proper API
   static async getImageUrl(searchTerm: string, width: number = 1200, height: number = 600): Promise<string> {
@@ -10,28 +10,37 @@ export class UnsplashService {
       const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '+');
       
       // Use Unsplash API for high-quality, relevant images
-      const response = await fetch(`${this.BASE_URL}/photos/random?query=${cleanTerm}&orientation=landscape&client_id=${this.ACCESS_KEY}`);
+      const response = await fetch(`${this.BASE_URL}/photos/random?query=${cleanTerm}&orientation=landscape&client_id=${this.ACCESS_KEY}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Version': 'v1'
+        }
+      });
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Unsplash API response:', data);
         // Return the regular image URL with proper dimensions
         return `${data.urls.raw}&w=${width}&h=${height}&fit=crop&crop=entropy&auto=format&q=80`;
+      } else {
+        console.log('Unsplash API response not ok:', response.status, response.statusText);
       }
     } catch (error) {
       console.log('Unsplash API error, using fallback:', error);
     }
     
-    // Fallback to Unsplash Source if API fails
-    return `https://images.unsplash.com/${width}x${height}/?${cleanTerm}&auto=format&fit=crop&q=80`;
+    // Enhanced fallback with proper URL structure
+    const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '%20');
+    return `https://source.unsplash.com/${width}x${height}/?${cleanTerm}`;
   }
   
   // Synchronous version for immediate use (fallback method)
   static getImageUrlSync(searchTerm: string, width: number = 1200, height: number = 600): string {
     // Clean search term for URL
-    const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '+');
+    const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '%20');
     
     // Use Unsplash Source API for random images
-    return `https://images.unsplash.com/${width}x${height}/?${cleanTerm}&auto=format&fit=crop&q=80`;
+    return `https://source.unsplash.com/${width}x${height}/?${cleanTerm}`;
   }
   
   // Get hero image for article

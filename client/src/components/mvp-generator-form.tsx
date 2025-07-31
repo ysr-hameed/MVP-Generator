@@ -262,7 +262,7 @@ export function MvpGeneratorForm() {
                   <FormLabel>Startup Idea Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe your startup idea in detail. What problem does it solve? Who is your target audience? What makes it unique?"
+                      placeholder="Describe your startup idea in detail. Include: What problem does it solve? Who is your target audience? What makes it unique? Example: 'A mobile app that helps busy professionals meal plan by suggesting recipes based on dietary preferences, available time, and local grocery deals. Target audience: Working professionals aged 25-40 who want to eat healthy but lack time for meal planning.'"
                       className="input-enhanced min-h-[140px] resize-none"
                       data-testid="textarea-idea"
                       {...field}

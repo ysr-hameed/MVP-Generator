@@ -20,36 +20,44 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
   useEffect(() => {
     // Execute ad scripts when component mounts or ads change
     positionAds.forEach((ad: any) => {
-      if (!mountedAds.has(ad.id) && ad.adCode.includes('<script')) {
+      if (!mountedAds.has(ad.id)) {
         try {
-          // Create a temporary div to parse the ad code
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = ad.adCode;
-          
-          // Find and execute scripts
-          const scripts = tempDiv.getElementsByTagName('script');
-          Array.from(scripts).forEach(script => {
-            if (script.src) {
-              // External script
-              const newScript = document.createElement('script');
-              newScript.src = script.src;
-              newScript.async = true;
-              document.head.appendChild(newScript);
-            } else if (script.textContent) {
-              // Inline script
-              const newScript = document.createElement('script');
-              newScript.textContent = script.textContent;
-              document.head.appendChild(newScript);
-            }
-          });
-          
+          // Mark as mounted immediately to prevent duplicate execution
           setMountedAds(prev => new Set([...prev, ad.id]));
+          
+          if (ad.adCode && ad.adCode.includes('<script')) {
+            // Create a temporary div to parse the ad code
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = ad.adCode;
+            
+            // Find and execute scripts
+            const scripts = tempDiv.getElementsByTagName('script');
+            Array.from(scripts).forEach(script => {
+              if (script.src) {
+                // External script
+                const newScript = document.createElement('script');
+                newScript.src = script.src;
+                newScript.async = true;
+                newScript.defer = true;
+                document.head.appendChild(newScript);
+              } else if (script.textContent && script.textContent.trim()) {
+                // Inline script
+                try {
+                  const newScript = document.createElement('script');
+                  newScript.textContent = script.textContent;
+                  document.body.appendChild(newScript);
+                } catch (scriptError) {
+                  console.error('Error executing inline script:', scriptError);
+                }
+              }
+            });
+          }
         } catch (error) {
           console.error('Error executing ad script:', error);
         }
       }
     });
-  }, [positionAds, mountedAds]);
+  }, [positionAds]);
 
   if (positionAds.length === 0) {
     return null;
