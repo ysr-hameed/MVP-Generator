@@ -190,9 +190,9 @@ export default function Blog() {
                 )}
               </div>
             ) : (
-              <AdDisplay position="content" className="flex justify-center mb-8" />
-
-        <div className="grid md:grid-cols-3 gap-8">
+              <>
+                <AdDisplay position="content" className="flex justify-center mb-8" />
+                <div className="grid md:grid-cols-3 gap-8">
                 {filteredPosts.filter(post => !post.featured).map((post, index) => (
                   <div key={post.id}>
                   {index === Math.floor(filteredPosts.filter(post => !post.featured).length / 2) && (
@@ -234,7 +234,8 @@ export default function Blog() {
                   </Card>
                 </div>
                 ))}
-              </div>
+                </div>
+              </>
             )}
 
             {filteredPosts.length > 0 && (

@@ -3,7 +3,8 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { AdDisplay } from "@/components/ad-display";
-import { Menu, X } from "lucide-react";
+import MobileNav from "@/components/ui/mobile-nav";
+import { Menu, X, Lightbulb } from "lucide-react";
 
 export function Navigation() {
   const [location] = useLocation();
@@ -44,7 +45,7 @@ export function Navigation() {
                 </span>
               </Link>
             ))}
-            <AdDisplay slot="nav-sidebar" />
+            <AdDisplay position="header" />
           </nav>
 
           {/* Actions */}
