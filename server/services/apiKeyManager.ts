@@ -16,38 +16,38 @@ export class ApiKeyManager {
   private static async loadApiKeys() {
     try {
       const storage = await getStorage();
-      
+
       // Load Gemini API keys
       const geminiKeys = await storage.getActiveApiKeys("gemini");
       this.geminiKeys = geminiKeys.map(k => k.key);
-      
+
       // Load Unsplash API keys
       const unsplashKeys = await storage.getActiveApiKeys("unsplash");
       this.unsplashKeys = unsplashKeys.map(k => k.key);
-      
+
       console.log(`🔄 Loaded from database: ${this.geminiKeys.length} Gemini keys, ${this.unsplashKeys.length} Unsplash keys`);
-      
+
       // Show partial keys for verification
       this.geminiKeys.forEach((key, index) => {
         console.log(`  Gemini Key ${index + 1}: ${key.substring(0, 8)}...`);
       });
-      
+
       this.unsplashKeys.forEach((key, index) => {
         console.log(`  Unsplash Key ${index + 1}: ${key.substring(0, 8)}...`);
       });
-      
+
     } catch (error) {
       console.error("Failed to load API keys from database:", error);
-      
+
       // Fallback to environment variables
       const geminiEnv = process.env.GEMINI_API_KEY;
       const unsplashEnv = process.env.UNSPLASH_API_KEY;
-      
+
       if (geminiEnv) {
         this.geminiKeys = [geminiEnv];
         console.log("✓ Using environment GEMINI_API_KEY as fallback");
       }
-      
+
       if (unsplashEnv) {
         this.unsplashKeys = [unsplashEnv];
         console.log("✓ Using environment UNSPLASH_API_KEY as fallback");
@@ -59,7 +59,7 @@ export class ApiKeyManager {
     if (this.geminiKeys.length === 0) {
       await this.loadApiKeys();
     }
-    
+
     if (this.geminiKeys.length === 0) {
       console.error("❌ No Gemini API keys available");
       return null;
@@ -77,7 +77,7 @@ export class ApiKeyManager {
     if (this.unsplashKeys.length === 0) {
       await this.loadApiKeys();
     }
-    
+
     if (this.unsplashKeys.length === 0) {
       console.error("❌ No Unsplash API keys available");
       return null;
@@ -103,19 +103,19 @@ export class ApiKeyManager {
 
   static async handleApiError(provider: string, error: any) {
     console.error(`API Error for ${provider}:`, error.message);
-    
+
     if (provider === "gemini" && this.geminiKeys.length > 1) {
       console.log("🔄 Rotating Gemini key due to error");
       this.rotateGeminiKey();
       return true;
     }
-    
+
     if (provider === "unsplash" && this.unsplashKeys.length > 1) {
       console.log("🔄 Rotating Unsplash key due to error");
       this.rotateUnsplashKey();
       return true;
     }
-    
+
     return false;
   }
 
