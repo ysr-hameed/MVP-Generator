@@ -21,6 +21,7 @@ import { adminAuth, requireAdmin, verifyToken } from "./middleware/auth";
 import { UnsplashService } from "./services/unsplashService";
 import { autoBlogService } from "./services/autoBlog";
 import { SitemapGenerator } from "./services/sitemapGenerator";
+import { registerSeoRoutes } from "./routes/seoRoutes";
 
 // Simple auth middleware for admin routes
 const isAuthenticated = (req: any, res: any, next: any) => {
@@ -137,6 +138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: "Invalid contact data" });
     }
   });
+
+  // Register SEO routes
+  registerSeoRoutes(app);
 
   // Blog endpoints
   app.get("/api/blog/posts", async (req, res) => {
@@ -418,6 +422,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Auto blog management
+  // Enhanced auto blog settings endpoint
+  app.get("/api/admin/auto-blog-settings", isAuthenticated, async (req, res) => {
+    try {
+      const storage = await getStorage();
+      const settings = await storage.getAutoBlogSettings();
+      res.json(settings || {
+        enabled: false,
+        frequency: "daily",
+        dailyPostCount: 1,
+        weeklyPostCount: 3,
+        monthlyPostCount: 10,
+        useLatestTrends: true,
+        focusOnMyApp: true,
+        seoOptimization: true,
+        useUnsplashImages: true,
+        contentLength: "medium",
+        writingTone: "professional",
+        includeCallToAction: true,
+        autoPublish: true,
+        generateSocialPosts: false,
+      });
+    } catch (error) {
+      console.error("Enhanced auto blog settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch auto blog settings" });
+    }
+  });
+
+  app.post("/api/admin/auto-blog-settings", isAuthenticated, async (req, res) => {
+    try {
+      const storage = await getStorage();
+      const settings = await storage.updateAutoBlogSettings(req.body);
+      res.json(settings);
+    } catch (error) {
+      console.error("Enhanced auto blog settings update error:", error);
+      res.status(400).json({ message: "Invalid auto blog settings" });
+    }
+  });
+
+  // Generate test blog post endpoint
+  app.post("/api/admin/generate-test-blog", isAuthenticated, async (req, res) => {
+    try {
+      // Generate a single test post using enhanced blog generator
+      const { enhancedBlogGenerator } = await import("./services/enhancedBlogGenerator");
+      const result = await enhancedBlogGenerator.generateSinglePost();
+      
+      if (result.success && result.post) {
+        res.json({
+          success: true,
+          title: result.post.title,
+          slug: result.post.slug,
+          message: "Test blog post generated successfully"
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: result.error || "Failed to generate test post" 
+        });
+      }
+    } catch (error) {
+      console.error("Test blog generation error:", error);
+      res.status(500).json({ message: "Failed to generate test blog post" });
+    }
+  });
+
   app.get("/api/admin/auto-blog", isAuthenticated, async (req, res) => {
     try {
       const storage = await getStorage();

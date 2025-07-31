@@ -130,19 +130,34 @@ export default function SEOHead({
       // Submit to IndexNow for instant indexing
       const submitToIndexNow = async () => {
         try {
-          const indexNowKey = "your-indexnow-key"; // Add to environment
+          // Get IndexNow key from environment or use site setting
+          const response = await fetch('/api/site-settings');
+          const settings = await response.json();
+          const indexNowKey = settings?.indexNowKey || import.meta.env.VITE_INDEXNOW_KEY;
+          
+          if (!indexNowKey) {
+            console.log('IndexNow key not configured, skipping submission');
+            return;
+          }
+
           const url = window.location.href;
           
-          await fetch(`https://api.indexnow.org/indexnow?url=${encodeURIComponent(url)}&key=${indexNowKey}`, {
-            method: 'GET'
+          // Use POST method with proper headers
+          await fetch('/api/indexnow/submit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ url, key: indexNowKey })
           });
         } catch (error) {
+          // Silent fail for SEO functionality
           console.log('IndexNow submission failed:', error);
         }
       };
 
-      // Submit after a delay to avoid spamming
-      setTimeout(submitToIndexNow, 2000);
+      // Submit after page load to avoid blocking
+      setTimeout(submitToIndexNow, 3000);
     }
   }, [title, description, keywords, ogTitle, ogDescription, ogImage, twitterTitle, twitterDescription, twitterImage, canonical, structuredData, noindex, author, publishedTime, modifiedTime, articleTags, lang]);
 

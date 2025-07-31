@@ -46,10 +46,24 @@ export class GeminiService {
       // Fallback to environment variable if no keys in database
       if (this.apiKeys.length === 0 && process.env.GEMINI_API_KEY) {
         this.apiKeys = [process.env.GEMINI_API_KEY];
+        
+        // Store environment key in database for future use
+        try {
+          await storage.createApiKey({
+            provider: "gemini",
+            key: process.env.GEMINI_API_KEY,
+            isActive: true,
+            dailyUsage: 0,
+          });
+          console.log("✓ Stored Gemini API key from environment to database");
+        } catch (dbError) {
+          console.log("Could not store API key to database:", dbError);
+        }
       }
 
       if (this.apiKeys.length > 0) {
         this.genAI = new GoogleGenerativeAI(this.apiKeys[0]);
+        console.log(`✓ Initialized Gemini service with ${this.apiKeys.length} API keys`);
       }
     } catch (error) {
       console.error("Failed to initialize Gemini API keys:", error);
@@ -75,8 +89,7 @@ export class GeminiService {
       }
     } while (this.currentKeyIndex !== startIndex);
 
-    // If all keys are at limit, use the first one anyway (it will fail but that's expected)
-    this.genAI = new GoogleGenAI({ apiKey: this.apiKeys[0] });
+    console.log(`⚠️ All ${this.apiKeys.length} API keys have reached daily limits`);
   }
 
   async generateMvpPlan(

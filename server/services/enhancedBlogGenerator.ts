@@ -3,6 +3,40 @@ import { UnsplashService } from "./unsplashService";
 import { getStorage } from "../storage";
 
 export class EnhancedBlogGenerator {
+  
+  async generateSinglePost() {
+    try {
+      const settings = {
+        enabled: true,
+        useLatestTrends: true,
+        focusOnMyApp: true,
+        contentLength: "medium",
+        writingTone: "professional",
+        includeCallToAction: true,
+        useUnsplashImages: true
+      };
+
+      const posts = await this.generateBlogPosts(1, settings);
+      
+      if (posts.length > 0) {
+        return {
+          success: true,
+          post: posts[0]
+        };
+      } else {
+        return {
+          success: false,
+          error: "No posts generated"
+        };
+      }
+    } catch (error) {
+      console.error("Single post generation error:", error);
+      return {
+        success: false,
+        error: error.message || "Failed to generate post"
+      };
+    }
+  }
   private readonly currentTopics2025 = [
     "AI-Powered MVP Development: Complete Guide for 2025",
     "No-Code MVP Platforms: Best Options for Non-Technical Founders in 2025",
