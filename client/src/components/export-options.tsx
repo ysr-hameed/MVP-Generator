@@ -27,16 +27,22 @@ export function ExportOptions({ mvpPlan, idea }: ExportOptionsProps) {
       const addTextWithPageBreaks = (text: string, x: number, fontSize: number = 10, color: number[] = [0, 0, 0]) => {
         pdf.setFontSize(fontSize);
         pdf.setTextColor(color[0], color[1], color[2]);
-        const lines = pdf.splitTextToSize(text, pageWidth - 40);
+        
+        // Clean and format text properly
+        const cleanText = String(text || '').replace(/\n/g, ' ').trim();
+        if (!cleanText) return yPosition;
+        
+        const lines = pdf.splitTextToSize(cleanText, pageWidth - 40);
         
         for (const line of lines) {
-          if (yPosition > pageHeight - 20) {
+          if (yPosition > pageHeight - 30) {
             pdf.addPage();
             yPosition = 20;
           }
           pdf.text(line, x, yPosition);
-          yPosition += fontSize === 10 ? 6 : 8;
+          yPosition += fontSize <= 10 ? 7 : fontSize <= 14 ? 9 : 11;
         }
+        yPosition += 3; // Add spacing after each section
         return yPosition;
       };
 
@@ -60,12 +66,19 @@ export function ExportOptions({ mvpPlan, idea }: ExportOptionsProps) {
 
       // Core Features
       if (mvpPlan.coreFeatures?.length > 0) {
+        if (yPosition > pageHeight - 60) {
+          pdf.addPage();
+          yPosition = 20;
+        }
         yPosition = addTextWithPageBreaks("CORE FEATURES", 20, 16, [0, 100, 200]);
         yPosition += 5;
         
         mvpPlan.coreFeatures.forEach((feature: string, index: number) => {
-          yPosition = addTextWithPageBreaks(`${index + 1}. ${feature}`, 25);
-          yPosition += 2;
+          if (yPosition > pageHeight - 30) {
+            pdf.addPage();
+            yPosition = 20;
+          }
+          yPosition = addTextWithPageBreaks(`${index + 1}. ${String(feature)}`, 25, 10);
         });
         yPosition += 10;
       }
@@ -395,56 +408,31 @@ export function ExportOptions({ mvpPlan, idea }: ExportOptionsProps) {
           Export Options
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Button
           onClick={exportToPDF}
           disabled={isExporting}
-          className="flex flex-col items-center gap-2 h-auto py-4"
+          className="flex flex-col items-center gap-3 h-auto py-6"
           variant="outline"
         >
-          <FileText className="w-6 h-6" />
-          <span className="text-sm">PDF Export</span>
-          <Badge variant="secondary" className="text-xs">Professional</Badge>
+          <FileText className="w-8 h-8" />
+          <div className="text-center">
+            <div className="text-base font-medium">Download PDF</div>
+            <div className="text-xs text-muted-foreground">Complete business plan</div>
+          </div>
+          {isExporting && <Badge variant="secondary" className="text-xs">Generating...</Badge>}
         </Button>
 
         <Button
           onClick={exportToJSON}
-          className="flex flex-col items-center gap-2 h-auto py-4"
+          className="flex flex-col items-center gap-3 h-auto py-6"
           variant="outline"
         >
-          <FileJson className="w-6 h-6" />
-          <span className="text-sm">JSON Data</span>
-          <Badge variant="secondary" className="text-xs">Structured</Badge>
-        </Button>
-
-        <Button
-          onClick={copyToClipboard}
-          className="flex flex-col items-center gap-2 h-auto py-4"
-          variant="outline"
-        >
-          <Copy className="w-6 h-6" />
-          <span className="text-sm">Copy Text</span>
-          <Badge variant="secondary" className="text-xs">Quick</Badge>
-        </Button>
-
-        <Button
-          onClick={printPlan}
-          className="flex flex-col items-center gap-2 h-auto py-4"
-          variant="outline"
-        >
-          <Printer className="w-6 h-6" />
-          <span className="text-sm">Print</span>
-          <Badge variant="secondary" className="text-xs">Physical</Badge>
-        </Button>
-
-        <Button
-          onClick={sharePlan}
-          className="flex flex-col items-center gap-2 h-auto py-4"
-          variant="outline"
-        >
-          <Share2 className="w-6 h-6" />
-          <span className="text-sm">Share</span>
-          <Badge variant="secondary" className="text-xs">Social</Badge>
+          <FileJson className="w-8 h-8" />
+          <div className="text-center">
+            <div className="text-base font-medium">Download JSON</div>
+            <div className="text-xs text-muted-foreground">Structured data format</div>
+          </div>
         </Button>
       </CardContent>
     </Card>

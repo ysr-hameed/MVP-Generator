@@ -19,36 +19,38 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const { data: ads = [] } = useQuery({
     queryKey: ["/api/advertisements"],
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    enabled: !!adSettings?.enableAds, // Only fetch if ads are enabled
   });
 
   // Filter ads for this position
   const positionAds = ads.filter((ad: any) => 
-    ad.position === position && ad.isActive
+    ad.position === position && ad.isActive && ad.adCode?.trim()
   );
 
   // Apply ad count limits based on settings
   const getMaxAdsForPosition = () => {
     const counts = {
       low: { 
-        header: 1, sidebar: 2, content: 1, footer: 1,
+        header: 1, sidebar: 1, content: 1, footer: 1,
         "blog-top": 1, "blog-middle": 1, "blog-bottom": 1,
         "generator-top": 1, "generator-bottom": 1
       },
       medium: { 
-        header: 1, sidebar: 3, content: 2, footer: 1,
-        "blog-top": 2, "blog-middle": 2, "blog-bottom": 1,
-        "generator-top": 1, "generator-bottom": 2
+        header: 1, sidebar: 2, content: 1, footer: 1,
+        "blog-top": 1, "blog-middle": 1, "blog-bottom": 1,
+        "generator-top": 1, "generator-bottom": 1
       },
       high: { 
-        header: 2, sidebar: 4, content: 3, footer: 2,
-        "blog-top": 2, "blog-middle": 3, "blog-bottom": 2,
-        "generator-top": 2, "generator-bottom": 2
+        header: 1, sidebar: 3, content: 2, footer: 2,
+        "blog-top": 1, "blog-middle": 2, "blog-bottom": 2,
+        "generator-top": 1, "generator-bottom": 2
       }
     };
-    return counts[adSettings?.adCount || 'low'][position] || 1;
+    return counts[adSettings?.adCount || 'low'][position] || 0;
   };
 
-  const limitedAds = adSettings?.enableAds ? positionAds.slice(0, getMaxAdsForPosition()) : [];
+  const limitedAds = (adSettings?.enableAds && positionAds.length > 0) ? 
+    positionAds.slice(0, getMaxAdsForPosition()) : [];
 
   useEffect(() => {
     // Execute ad scripts when component mounts or ads change

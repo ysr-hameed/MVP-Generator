@@ -1,6 +1,7 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, CheckCircle, Zap, BarChart3, Clock, Shield, Lightbulb, TrendingUp, Users, Globe } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import SEOHead from "@/components/seo-head";
 import { AdDisplay } from "@/components/ad-display";
 
@@ -32,9 +33,13 @@ export default function Home() {
       />
 
       <div className="pt-16">
+        {/* Header Ads */}
+        <AdDisplay position="header" className="bg-slate-50 py-2" />
+
         {/* Hero Section */}
-        <section className="min-h-screen flex items-center relative overflow-hidden pt-16">
-          <div className="absolute inset-0 bg-background"></div>
+        <section className="section-padding bg-gradient-to-br from-primary/10 via-secondary/5 to-accent/10">
+          <AdDisplay position="homepage-hero" className="mb-8" />
+          {/* Hero content */}
 
           <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12">
             <div className="text-center max-w-4xl mx-auto space-y-8">

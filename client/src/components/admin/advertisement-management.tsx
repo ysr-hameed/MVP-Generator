@@ -205,15 +205,21 @@ export function AdvertisementManagement() {
   };
 
   const adPositions = [
-    { value: "header", label: "Header" },
+    { value: "header", label: "Header Banner" },
     { value: "sidebar", label: "Sidebar" },
-    { value: "content", label: "Content" },
+    { value: "content", label: "Content Area" },
     { value: "footer", label: "Footer" },
     { value: "blog-top", label: "Blog Top" },
     { value: "blog-middle", label: "Blog Middle" },
     { value: "blog-bottom", label: "Blog Bottom" },
     { value: "generator-top", label: "Generator Top" },
     { value: "generator-bottom", label: "Generator Bottom" },
+    { value: "homepage-hero", label: "Homepage Hero" },
+    { value: "homepage-features", label: "Homepage Features" },
+    { value: "navigation", label: "Navigation Bar" },
+    { value: "floating", label: "Floating/Sticky" },
+    { value: "between-sections", label: "Between Sections" },
+    { value: "popup", label: "Popup/Modal" },
   ];
 
   return (

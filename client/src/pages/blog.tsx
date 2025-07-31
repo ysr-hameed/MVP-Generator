@@ -160,7 +160,7 @@ export default function Blog() {
             <AdDisplay position="content" className="mb-8" />
 
             {isLoading ? (
-              <div className="grid md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 {[...Array(6)].map((_, i) => (
                   <Card key={i} className="animate-pulse">
                     <div className="w-full h-48 bg-muted"></div>
@@ -192,7 +192,7 @@ export default function Blog() {
             ) : (
               <>
                 <AdDisplay position="content" className="flex justify-center mb-8" />
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
                 {filteredPosts.filter(post => !post.featured).map((post, index) => (
                   <div key={post.id}>
                   {index === Math.floor(filteredPosts.filter(post => !post.featured).length / 2) && (
