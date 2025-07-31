@@ -48,7 +48,7 @@ async function main() {
     setTimeout(async () => {
       try {
         console.log("Starting cron job service...");
-        await ApiKeyManager.initializeFromEnvironment();
+        await ApiKeyManager.initialize();
         await ApiKeyManager.resetDailyUsage();
         cronJobService.start();
         console.log("Cron job service started");

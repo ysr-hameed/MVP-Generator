@@ -73,6 +73,8 @@ export interface IStorage {
   resetDailyUsage(): Promise<void>;
 
   // Advertisement operations
+  getActiveAdvertisements(): Promise<Advertisement[]>;
+  getAllAdvertisements(): Promise<Advertisement[]>;
   getAdvertisements(): Promise<Advertisement[]>;
   createAdvertisement(data: InsertAdvertisement): Promise<Advertisement>;
   updateAdvertisement(id: string, data: Partial<InsertAdvertisement>): Promise<Advertisement>;
@@ -336,8 +338,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Advertisement operations
-  async getAdvertisements(): Promise<Advertisement[]> {
+  async getActiveAdvertisements(): Promise<Advertisement[]> {
+    return await this.db
+      .select()
+      .from(advertisements)
+      .where(eq(advertisements.isActive, true))
+      .orderBy(advertisements.createdAt);
+  }
+
+  async getAllAdvertisements(): Promise<Advertisement[]> {
     return await this.db.select().from(advertisements).orderBy(advertisements.createdAt);
+  }
+
+  async getAdvertisements(): Promise<Advertisement[]> {
+    return this.getAllAdvertisements();
   }
 
   async createAdvertisement(data: InsertAdvertisement): Promise<Advertisement> {
@@ -363,14 +377,6 @@ export class DatabaseStorage implements IStorage {
     await this.db
       .delete(advertisements)
       .where(eq(advertisements.id, id));
-  }
-
-  async getActiveAdvertisements(): Promise<Advertisement[]> {
-    return await this.db
-      .select()
-      .from(advertisements)
-      .where(eq(advertisements.isActive, true))
-      .orderBy(advertisements.createdAt);
   }
 
   async getAdSettings(): Promise<any> {

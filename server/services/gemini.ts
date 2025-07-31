@@ -1,85 +1,72 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { ApiKeyManager } from "./apiKeyManager";
-import { getStorage } from "../storage";
 
-class GeminiService {
-  private clients: Map<string, GoogleGenerativeAI> = new Map();
-  private availableKeys: string[] = [];
-  private currentKeyIndex = 0;
+export class GeminiService {
   private model = "gemini-1.5-flash";
 
   constructor() {
-    this.initializeClients();
-  }
-
-  private async initializeClients() {
-    try {
-      // Get API keys from database storage
-      const storage = await getStorage();
-      const apiKeys = await storage.getActiveApiKeys("gemini");
-
-      console.log(`🔄 Loading API keys from database: Found ${apiKeys.length} active Gemini keys`);
-
-      if (apiKeys.length > 0) {
-        // Initialize clients for each API key
-        apiKeys.forEach((keyData, index) => {
-          const client = new GoogleGenerativeAI(keyData.key);
-          this.clients.set(keyData.key, client);
-          this.availableKeys.push(keyData.key);
-          console.log(`  Key ${index + 1}: ${keyData.key.substring(0, 8)}...`);
-        });
-
-        console.log(`✓ Initialized Gemini service with ${this.clients.size} API keys using model: ${this.model}`);
-      } else {
-        console.warn("⚠️ No active Gemini API keys found in database");
-      }
-    } catch (error) {
-      console.error("Failed to initialize Gemini clients:", error);
-    }
+    // Initialize API key manager on service creation
+    ApiKeyManager.initialize().catch(console.error);
   }
 
   async generateText(prompt: string, retries = 3): Promise<string> {
-    let currentApiKey = await ApiKeyManager.getAvailableApiKey("gemini");
-    if (!currentApiKey) {
-      throw new Error("No Gemini API keys available");
-    }
-
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
+        const currentApiKey = await ApiKeyManager.getCurrentGeminiKey();
+        if (!currentApiKey) {
+          throw new Error("No Gemini API keys available");
+        }
+
         const genAI = new GoogleGenerativeAI(currentApiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: this.model });
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
-
-        // Increment usage for successful API call
-        await ApiKeyManager.incrementUsage(currentApiKey);
 
         return text;
       } catch (error: any) {
         console.error(`Gemini API error (attempt ${attempt + 1}/${retries + 1}):`, error.message);
 
         // Handle API key rotation on errors
-        const nextKey = await ApiKeyManager.handleApiError(currentApiKey, error);
+        const rotated = await ApiKeyManager.handleApiError("gemini", error);
 
-        if (attempt < retries && nextKey) {
-          console.log(`🔄 Switching to next API key for retry...`);
-          currentApiKey = nextKey;
+        if (attempt < retries && rotated) {
+          console.log(`🔄 Retrying with rotated API key...`);
           await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
           continue;
         }
 
-        // If no more retries or no more keys available
+        // If no more retries
         if (attempt >= retries) {
           throw new Error(`Gemini API failed after ${retries + 1} attempts: ${error.message}`);
         }
-
-        throw new Error(`Gemini API error: ${error.message}`);
       }
     }
 
     throw new Error("Unexpected error in generateContent");
+  }
+
+  async generateJSON<T = any>(prompt: string, retries = 3): Promise<T> {
+    const text = await this.generateText(prompt, retries);
+    
+    try {
+      // Clean the response text to extract JSON
+      let cleanedText = text.trim();
+      
+      // Remove markdown code blocks if present
+      if (cleanedText.startsWith('```json')) {
+        cleanedText = cleanedText.replace(/```json\n?/, '').replace(/\n?```$/, '');
+      } else if (cleanedText.startsWith('```')) {
+        cleanedText = cleanedText.replace(/```\n?/, '').replace(/\n?```$/, '');
+      }
+      
+      return JSON.parse(cleanedText);
+    } catch (parseError) {
+      console.error("Failed to parse JSON response:", parseError);
+      console.log("Raw response:", text);
+      throw new Error("Failed to parse JSON response from Gemini");
+    }
   }
 }
 

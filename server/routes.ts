@@ -53,69 +53,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }));
 
-  // Ad settings and advertisement endpoints
+  // Ad settings and advertisement endpoints - fetch from database
   app.get("/api/admin/ad-settings", async (req, res) => {
-    const defaultSettings = {
-      enableAds: true,
-      adCount: 'medium' as const,
-      showAdLabels: true
-    };
-    res.json(defaultSettings);
+    try {
+      const storage = await getStorage();
+      const settings = await storage.getAdSettings();
+      
+      if (settings) {
+        res.json(settings);
+      } else {
+        // Default settings if none exist
+        const defaultSettings = {
+          enableAds: true,
+          adCount: 'medium' as const,
+          showAdLabels: true
+        };
+        res.json(defaultSettings);
+      }
+    } catch (error) {
+      console.error("Error fetching ad settings:", error);
+      res.json({
+        enableAds: true,
+        adCount: 'medium' as const,
+        showAdLabels: true
+      });
+    }
   });
 
   app.get("/api/advertisements", async (req, res) => {
-    const sampleAds = [
-      {
-        id: "header-1",
-        name: "Header Ad",
-        position: "header",
-        isActive: true,
-        adCode: `<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white; border-radius: 8px; margin: 10px 0;">
-          <h3 style="margin: 0; font-size: 18px;">🚀 Start Your MVP Today</h3>
-          <p style="margin: 5px 0 0; opacity: 0.9;">Professional development services available</p>
-        </div>`,
-        width: 728,
-        height: 90
-      },
-      {
-        id: "sidebar-1",
-        name: "Sidebar Ad 1",
-        position: "sidebar",
-        isActive: true,
-        adCode: `<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 15px; text-align: center; color: white; border-radius: 8px; margin: 10px 0; min-height: 200px; display: flex; flex-direction: column; justify-content: center;">
-          <h4 style="margin: 0; font-size: 16px;">💡 Need Help?</h4>
-          <p style="margin: 10px 0; font-size: 14px;">Get professional startup consulting</p>
-          <a href="#" style="color: white; text-decoration: underline;">Learn More</a>
-        </div>`,
-        width: 300,
-        height: 250
-      },
-      {
-        id: "content-1",
-        name: "Content Ad",
-        position: "content",
-        isActive: true,
-        adCode: `<div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; text-align: center; color: white; border-radius: 8px; margin: 15px 0;">
-          <h3 style="margin: 0; font-size: 18px;">📊 Analytics & Insights</h3>
-          <p style="margin: 10px 0; opacity: 0.9;">Track your startup's performance</p>
-        </div>`,
-        width: 728,
-        height: 90
-      },
-      {
-        id: "footer-1",
-        name: "Footer Ad",
-        position: "footer",
-        isActive: true,
-        adCode: `<div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 20px; text-align: center; color: #333; border-radius: 8px; margin: 10px;">
-          <h3 style="margin: 0; font-size: 18px;">🌟 Premium Features</h3>
-          <p style="margin: 10px 0;">Unlock advanced MVP generation</p>
-        </div>`,
-        width: 728,
-        height: 90
-      }
-    ];
-    res.json(sampleAds);
+    try {
+      const storage = await getStorage();
+      const advertisements = await storage.getActiveAdvertisements();
+      res.json(advertisements);
+    } catch (error) {
+      console.error("Error fetching advertisements:", error);
+      res.status(500).json({ message: "Failed to fetch advertisements" });
+    }
   });
 
   // Analytics tracking
