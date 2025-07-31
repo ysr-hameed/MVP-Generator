@@ -1,4 +1,3 @@
-typescript
 import { getStorage } from "../storage";
 
 export class SitemapGenerator {
