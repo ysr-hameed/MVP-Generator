@@ -144,12 +144,29 @@ CONTENT FORMATTING REQUIREMENTS:
       const cleanedResponse = response.replace(/```json\s*|\s*```/g, '').trim();
       const content = JSON.parse(cleanedResponse);
 
-      // Add Unsplash images to content
-      content.imageUrl = UnsplashService.getHeroImage(topic);
-      content.content = this.enhanceContentWithImages(content.content, topic);
+      // Add Unsplash images to content using API
+      try {
+        content.imageUrl = await UnsplashService.getHighQualityImage(topic, 1200, 600);
+      } catch (error) {
+        console.log('Failed to get high quality image, using fallback');
+        content.imageUrl = UnsplashService.getHeroImage(topic);
+      }
+      
+      content.content = await this.enhanceContentWithImages(content.content, topic);
       
       // Add additional humanization touches
       content.content = this.addHumanTouches(content.content, affiliateLinks);
+
+      // Add SEO enhancements
+      content.sitemap = {
+        url: `/blog/${content.slug}`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'weekly',
+        priority: 0.8
+      };
+
+      // Add auto-indexing hints
+      content.autoIndex = true;
 
       return content;
     } catch (error) {
@@ -212,9 +229,21 @@ CONTENT FORMATTING REQUIREMENTS:
     return humanizedContent;
   }
 
-  private enhanceContentWithImages(content: string, topic: string): string {
-    // Get section images
-    const sectionImages = UnsplashService.getSectionImages(topic, 3);
+  private async enhanceContentWithImages(content: string, topic: string): Promise<string> {
+    // Get section images using API for better quality
+    const sectionImages: string[] = [];
+    const searchTerms = this.extractSearchTerms(topic);
+    
+    try {
+      for (let i = 0; i < 3; i++) {
+        const term = searchTerms[i] || `business ${i + 1}`;
+        const image = await UnsplashService.getImageUrl(term, 800, 400);
+        sectionImages.push(image);
+      }
+    } catch (error) {
+      console.log('Failed to get high quality section images, using fallback');
+      sectionImages.push(...UnsplashService.getSectionImages(topic, 3));
+    }
     
     // Convert markdown/plain content to HTML with images
     let htmlContent = content;
@@ -306,6 +335,17 @@ CONTENT FORMATTING REQUIREMENTS:
     // Use timestamp + day + hour for better uniqueness
     const uniqueIndex = (timestamp + dayOfYear + hour) % allTopics.length;
     return allTopics[uniqueIndex];
+  }
+
+  private extractSearchTerms(topic: string): string[] {
+    const commonWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'how', 'what', 'why', 'when', 'where'];
+    
+    return topic
+      .toLowerCase()
+      .replace(/[^\w\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 3 && !commonWords.includes(word))
+      .slice(0, 5);
   }
 
   async processQueue(): Promise<void> {

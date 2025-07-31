@@ -4,7 +4,7 @@ export class ApiKeyManager {
   static async initializeFromEnvironment() {
     try {
       const storage = await getStorage();
-      
+
       // Initialize Gemini API keys
       const existingGeminiKeys = await storage.getActiveApiKeys("gemini");
       if (existingGeminiKeys.length === 0) {
@@ -20,7 +20,7 @@ export class ApiKeyManager {
       } else {
         console.log(`✓ Found ${existingUnsplashKeys.length} existing Unsplash API keys`);
       }
-      
+
     } catch (error) {
       console.error("Failed to initialize API keys:", error);
     }
@@ -85,7 +85,7 @@ export class ApiKeyManager {
 
     const totalUnsplashKeys = await storage.getActiveApiKeys("unsplash");
     console.log(`✓ Total Unsplash API keys configured: ${totalUnsplashKeys.length}`);
-      
+
     } catch (error) {
       console.error("Failed to initialize API keys:", error);
     }
@@ -97,12 +97,12 @@ export class ApiKeyManager {
       const geminiKeys = await storage.getApiKeys("gemini");
       const unsplashKeys = await storage.getApiKeys("unsplash");
       const allKeys = [...geminiKeys, ...unsplashKeys];
-      
+
       const now = new Date();
       for (const key of allKeys) {
         const lastReset = new Date(key.lastReset);
         const hoursSinceReset = (now.getTime() - lastReset.getTime()) / (1000 * 60 * 60);
-        
+
         // Reset daily usage if more than 24 hours have passed
         if (hoursSinceReset >= 24) {
           await storage.updateApiKey(key.id, {
@@ -122,16 +122,16 @@ export class ApiKeyManager {
     try {
       const storage = await getStorage();
       const keyData = await storage.getApiKeyByValue(apiKey);
-      
+
       if (keyData) {
         const newUsage = keyData.dailyUsage + 1;
         const isActive = newUsage < 50; // Disable if over 50 requests per day
-        
+
         await storage.updateApiKey(keyData.id, {
           dailyUsage: newUsage,
           isActive: isActive
         });
-        
+
         if (!isActive) {
           console.log(`⚠️ API key ${keyData.id.substring(0, 8)}... reached daily limit`);
         }
@@ -140,4 +140,6 @@ export class ApiKeyManager {
       console.error("Failed to increment API usage:", error);
     }
   }
+
+  async rotateToNextKey(service: string): Promise<string | null> {
 }

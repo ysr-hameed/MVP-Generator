@@ -471,6 +471,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sitemap and SEO routes
+  app.get("/sitemap.xml", async (req, res) => {
+    try {
+      const { SitemapGenerator } = await import("./services/sitemapGenerator");
+      const sitemap = await SitemapGenerator.generateSitemap();
+      res.set('Content-Type', 'application/xml');
+      res.send(sitemap);
+    } catch (error) {
+      console.error("Sitemap generation error:", error);
+      res.status(500).send("Error generating sitemap");
+    }
+  });
+
+  app.get("/robots.txt", async (req, res) => {
+    try {
+      const { SitemapGenerator } = await import("./services/sitemapGenerator");
+      const robotsTxt = await SitemapGenerator.generateRobotsTxt();
+      res.set('Content-Type', 'text/plain');
+      res.send(robotsTxt);
+    } catch (error) {
+      console.error("Robots.txt generation error:", error);
+      res.status(500).send("Error generating robots.txt");
+    }
+  });
+
   // Site configuration
   app.get("/api/admin/site-config", isAuthenticated, async (req, res) => {
     try {

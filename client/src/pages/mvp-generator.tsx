@@ -15,7 +15,8 @@ export default function MvpGenerator() {
       <div className="pt-16">
         {/* Header Ads */}
         <AdDisplay position="header" className="py-4 bg-slate-50" />
-        
+
+        {/* Hero Section */}
         <section className="section-padding">
           <div className="container-max">
             <div className="text-center mb-16">
@@ -27,14 +28,24 @@ export default function MvpGenerator() {
               </p>
             </div>
 
-            <div className="max-w-4xl mx-auto">
-              {/* Content Ads */}
-              <AdDisplay position="content" className="mb-8" />
-              
-              <MvpGeneratorForm />
-              
-              {/* More Content Ads */}
-              <AdDisplay position="content" className="mt-8" />
+            <div className="flex gap-8">
+              {/* Sidebar Ads */}
+              <div className="w-80 hidden lg:block">
+                <div className="sticky top-20">
+                  <AdDisplay position="sidebar" />
+                </div>
+              </div>
+
+              {/* Main Content */}
+              <div className="flex-1 max-w-4xl mx-auto">
+                {/* Content Ads */}
+                <AdDisplay position="content" className="mb-8" />
+
+                <MvpGeneratorForm />
+
+                {/* More Content Ads */}
+                <AdDisplay position="content" className="mt-8" />
+              </div>
             </div>
           </div>
         </section>
