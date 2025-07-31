@@ -76,25 +76,59 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const displayAds = (adSettings?.enableAds && positionAds.length > 0) ? 
     positionAds.slice(0, getMaxAdsForPosition()) : [];
 
-  // Execute external scripts after DOM is updated
+  // Execute scripts after DOM is updated
   useEffect(() => {
     if (displayAds.length > 0) {
       displayAds.forEach((ad, index) => {
-        // Find external script sources in the ad code
-        const scriptSrcMatches = ad.adCode.match(/src\s*=\s*["']([^"']+)["']/g);
+        const containerId = `ad-container-${ad.id}-${index}`;
+        const container = document.getElementById(containerId);
         
-        if (scriptSrcMatches) {
-          scriptSrcMatches.forEach((srcMatch) => {
-            const src = srcMatch.match(/["']([^"']+)["']/)?.[1];
-            if (src && !document.querySelector(`script[src="${src}"]`)) {
-              const script = document.createElement('script');
-              script.src = src;
-              script.async = true;
-              script.onload = () => console.log('Ad script loaded:', src);
-              script.onerror = () => console.error('Ad script failed:', src);
-              document.head.appendChild(script);
+        if (container && ad.adCode) {
+          // Clear previous content
+          container.innerHTML = '';
+          
+          // Create a temporary div to parse the ad code
+          const tempDiv = document.createElement('div');
+          tempDiv.innerHTML = ad.adCode;
+          
+          // Handle inline scripts first
+          const inlineScripts = tempDiv.querySelectorAll('script:not([src])');
+          inlineScripts.forEach((script, scriptIndex) => {
+            if (script.textContent && script.textContent.trim()) {
+              try {
+                // Execute inline script content
+                const scriptContent = script.textContent;
+                console.log('Executing inline ad script:', scriptContent.substring(0, 100) + '...');
+                
+                // Use Function constructor to execute script safely
+                const executeScript = new Function(scriptContent);
+                executeScript();
+              } catch (error) {
+                console.error('Error executing inline ad script:', error);
+              }
             }
           });
+          
+          // Handle external scripts
+          const externalScripts = tempDiv.querySelectorAll('script[src]');
+          externalScripts.forEach((script, scriptIndex) => {
+            const src = script.getAttribute('src');
+            if (src && !document.querySelector(`script[src="${src}"]`)) {
+              const newScript = document.createElement('script');
+              newScript.src = src;
+              newScript.async = true;
+              newScript.type = 'text/javascript';
+              newScript.onload = () => console.log('External ad script loaded:', src);
+              newScript.onerror = () => console.error('External ad script failed:', src);
+              document.head.appendChild(newScript);
+            }
+          });
+          
+          // Add non-script content to container
+          const nonScriptContent = ad.adCode.replace(/<script[\s\S]*?<\/script>/gi, '');
+          if (nonScriptContent.trim()) {
+            container.innerHTML = nonScriptContent;
+          }
         }
       });
     }
@@ -122,13 +156,14 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
         {displayAds.map((ad, index) => (
           <div
             key={`${ad.id}-${index}`}
+            id={`ad-container-${ad.id}-${index}`}
             className="ad-slot"
             style={{
               minHeight: ad.height ? `${ad.height}px` : '50px',
               width: ad.width ? `${ad.width}px` : '100%',
-              maxWidth: '100%'
+              maxWidth: '100%',
+              overflow: 'hidden'
             }}
-            dangerouslySetInnerHTML={{ __html: ad.adCode }}
           />
         ))}
       </div>
