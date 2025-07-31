@@ -101,26 +101,28 @@ export class EnhancedMvpGenerator {
     const enhancedPrompt = `
 You are an expert startup advisor and technical architect. Generate a comprehensive, actionable MVP plan for ${currentYear} with the latest technology trends and market insights.
 
-**Startup Idea:** ${idea}
-**Industry:** ${industry || "General Technology"}
-**Target Audience:** ${targetAudience || "General consumers"}
-**Budget:** ${budget || "Variable"}
+**SPECIFIC STARTUP IDEA TO ANALYZE:** "${idea}"
+**INDUSTRY CONTEXT:** ${industry || "Technology/Software"}
+**TARGET AUDIENCE:** ${targetAudience || "General consumers and businesses"}
+**BUDGET CONSTRAINT:** ${budget || "Flexible budget"}
+
+IMPORTANT: Base ALL recommendations specifically on the idea "${idea}". Do not provide generic startup advice. Analyze this specific business concept and provide tailored recommendations.
 
 **Current Tech Trends (${currentYear}):** ${currentTrends}
 
-Create a comprehensive MVP plan that includes:
+Analyze the specific idea "${idea}" and create a comprehensive MVP plan that includes:
 
-1. **Core Features Analysis** - Identify the absolute minimum features needed for market validation
-2. **Modern Technical Architecture** - Recommend current, scalable technologies
-3. **Advanced Monetization Strategy** - Multiple revenue streams and pricing models
-4. **Detailed Timeline** - Realistic development phases with milestones
-5. **Comprehensive Budget Breakdown** - Detailed cost analysis for all aspects
-6. **Deep Market Analysis** - Target market, competition, opportunities, and risks
-7. **User Persona Development** - Detailed user profiles and behavior analysis
-8. **Feature Roadmap** - Phased feature development plan
-9. **Success Metrics** - KPIs and measurable goals
-10. **Risk Mitigation** - Identification and solutions for potential risks
-11. **Actionable Next Steps** - Prioritized action items
+1. **Core Features Analysis** - Identify the 5-8 essential features specifically needed for "${idea}" to work
+2. **Technical Architecture** - Recommend technologies that best fit this specific business model
+3. **Monetization Strategy** - Revenue models that align with "${idea}" and its target users
+4. **Development Timeline** - Realistic phases specifically for building "${idea}"
+5. **Budget Analysis** - Costs tailored to the complexity and requirements of "${idea}"
+6. **Market Analysis** - Competition and opportunities specific to this business concept
+7. **User Personas** - Who would actually use "${idea}" and why
+8. **Feature Roadmap** - How to evolve "${idea}" from MVP to full product
+9. **Success Metrics** - KPIs that matter for measuring "${idea}" success
+10. **Risk Assessment** - Challenges specific to "${idea}" and solutions
+11. **Next Steps** - Immediate actions to start building "${idea}"
 
 Focus on:
 - Latest ${currentYear} technology trends and best practices

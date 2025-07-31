@@ -4,6 +4,41 @@ export function generateFallbackMvp(idea: string, industry: string, targetAudien
                       budget.includes("low-budget") || budget.includes("$1,000") || budget.includes("$5,000") ? "low" :
                       budget.includes("under-10k") || budget.includes("$15,000") ? "medium" : "high";
   
+  // Generate features based on the specific idea
+  const generateIdeaSpecificFeatures = (idea: string) => {
+    const baseFeatures = [
+      "User registration and authentication",
+      "User dashboard and profile management",
+      "Search and discovery functionality",
+      "Mobile-responsive design",
+      "Basic analytics and reporting"
+    ];
+    
+    // Add idea-specific features based on keywords
+    const ideaLower = idea.toLowerCase();
+    const specificFeatures = [];
+    
+    if (ideaLower.includes('social') || ideaLower.includes('community')) {
+      specificFeatures.push("Social networking features", "User-generated content", "Community forums");
+    }
+    if (ideaLower.includes('e-commerce') || ideaLower.includes('shop') || ideaLower.includes('buy') || ideaLower.includes('sell')) {
+      specificFeatures.push("Product catalog", "Shopping cart", "Payment processing", "Order management");
+    }
+    if (ideaLower.includes('booking') || ideaLower.includes('appointment') || ideaLower.includes('schedule')) {
+      specificFeatures.push("Calendar integration", "Booking system", "Notification system");
+    }
+    if (ideaLower.includes('delivery') || ideaLower.includes('food') || ideaLower.includes('restaurant')) {
+      specificFeatures.push("Location-based services", "Real-time tracking", "Delivery management");
+    }
+    if (ideaLower.includes('learning') || ideaLower.includes('education') || ideaLower.includes('course')) {
+      specificFeatures.push("Content management", "Progress tracking", "Interactive learning tools");
+    }
+    
+    return [...baseFeatures, ...specificFeatures].slice(0, 8);
+  };
+  
+  const features = generateIdeaSpecificFeatures(idea);
+  
   const techStacks = {
     "Food & Beverage": {
       frontend: "React Native for mobile app",

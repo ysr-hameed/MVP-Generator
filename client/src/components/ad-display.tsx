@@ -69,7 +69,7 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
                     tempDiv.innerHTML = ad.adCode;
 
                     // Find the target ad container in the actual DOM
-                    const adContainer = document.querySelector(`#ad-container-${ad.id}`);
+                    const adContainer = document.querySelector(`[data-ad-id="${ad.id}"]`);
                     if (adContainer) {
                       // Add any non-script content to the container
                       const nonScriptContent = tempDiv.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
@@ -135,6 +135,7 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
         >
           <div 
             className="ad-content"
+            data-ad-id={ad.id}
             dangerouslySetInnerHTML={{ __html: ad.adCode }}
             style={{
               width: '100%',

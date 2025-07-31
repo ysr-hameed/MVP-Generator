@@ -21,7 +21,7 @@ export function ExportOptions({ mvpPlan, idea }: ExportOptionsProps) {
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      let yPosition = 20;
+      let yPosition = 30;
 
       // Helper function to add text with page breaks
       const addTextWithPageBreaks = (text: string, x: number, fontSize: number = 10, color: number[] = [0, 0, 0]) => {
@@ -47,14 +47,20 @@ export function ExportOptions({ mvpPlan, idea }: ExportOptionsProps) {
       };
 
       // Title page
-      pdf.setFontSize(24);
+      pdf.setFontSize(20);
       pdf.setTextColor(0, 100, 200);
-      pdf.text("MVP Business Plan", pageWidth / 2, 40, { align: 'center' });
+      pdf.text("MVP Business Plan", pageWidth / 2, yPosition, { align: 'center' });
+      yPosition += 20;
       
-      pdf.setFontSize(16);
+      pdf.setFontSize(14);
       pdf.setTextColor(60, 60, 60);
-      yPosition = 60;
-      addTextWithPageBreaks(idea, 20, 14, [60, 60, 60]);
+      pdf.text(`Business Idea: ${idea}`, 20, yPosition);
+      yPosition += 15;
+      
+      pdf.setFontSize(10);
+      pdf.setTextColor(100, 100, 100);
+      pdf.text(`Generated: ${new Date().toLocaleDateString()}`, 20, yPosition);
+      yPosition += 25;
       
       pdf.setFontSize(10);
       pdf.setTextColor(100, 100, 100);
@@ -66,21 +72,38 @@ export function ExportOptions({ mvpPlan, idea }: ExportOptionsProps) {
 
       // Core Features
       if (mvpPlan.coreFeatures?.length > 0) {
-        if (yPosition > pageHeight - 60) {
+        if (yPosition > pageHeight - 80) {
           pdf.addPage();
           yPosition = 20;
         }
-        yPosition = addTextWithPageBreaks("CORE FEATURES", 20, 16, [0, 100, 200]);
-        yPosition += 5;
+        
+        pdf.setFontSize(14);
+        pdf.setTextColor(0, 100, 200);
+        pdf.text("CORE FEATURES", 20, yPosition);
+        yPosition += 15;
+        
+        pdf.setFontSize(10);
+        pdf.setTextColor(0, 0, 0);
         
         mvpPlan.coreFeatures.forEach((feature: string, index: number) => {
           if (yPosition > pageHeight - 30) {
             pdf.addPage();
             yPosition = 20;
           }
-          yPosition = addTextWithPageBreaks(`${index + 1}. ${String(feature)}`, 25, 10);
+          const featureText = `${index + 1}. ${String(feature)}`;
+          const lines = pdf.splitTextToSize(featureText, pageWidth - 50);
+          
+          lines.forEach((line: string) => {
+            if (yPosition > pageHeight - 20) {
+              pdf.addPage();
+              yPosition = 20;
+            }
+            pdf.text(line, 25, yPosition);
+            yPosition += 7;
+          });
+          yPosition += 3;
         });
-        yPosition += 10;
+        yPosition += 15;
       }
 
       // Tech Stack
