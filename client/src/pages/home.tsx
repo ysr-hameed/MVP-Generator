@@ -2,6 +2,8 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import SEOHead from "@/components/seo-head";
+import AdDisplay from "@/components/ad-display";
 import { 
   ArrowRight, 
   CheckCircle, 
