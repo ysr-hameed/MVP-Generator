@@ -51,7 +51,7 @@ export class UnsplashService {
       try {
         const storage = await getStorage();
         const keyData = await storage.getApiKeyByValue(apiKey);
-        if (keyData && keyData.dailyUsage < 50) { // Assuming 50 requests per day limit
+        if (keyData && (keyData.dailyUsage || 0) < 50) { // Assuming 50 requests per day limit
           console.log(`Rotated to API key index ${this.currentKeyIndex}`);
           return apiKey;
         }

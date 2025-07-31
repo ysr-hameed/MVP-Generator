@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getStorage } from "./storage";
 import { geminiService } from "./services/gemini";
+import { enhancedMvpGenerator } from "./services/enhancedMvpGenerator";
 import { 
   insertAnalyticsSchema,
   insertMvpGenerationSchema,
@@ -69,13 +70,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // MVP Generation
+  // MVP Generation with Enhanced Features
   app.post("/api/mvp/generate", async (req, res) => {
     try {
       const data = mvpGeneratorSchema.parse(req.body);
 
-      // Generate MVP plan using Gemini
-      const plan = await geminiService.generateMvpPlan(
+      // Generate comprehensive MVP plan using enhanced generator
+      const plan = await enhancedMvpGenerator.generateComprehensiveMvp(
         data.idea,
         data.industry,
         data.targetAudience,
@@ -94,9 +95,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(plan);
     } catch (error) {
       console.error("MVP generation error:", error);
-      res.status(500).json({ 
-        message: error.message || "Failed to generate MVP plan" 
-      });
+      // Fallback to basic MVP generation if enhanced fails
+      try {
+        const fallbackPlan = await geminiService.generateMvpPlan(
+          req.body.idea,
+          req.body.industry,
+          req.body.targetAudience,
+          req.body.budget
+        );
+        
+        const storage = await getStorage();
+        await storage.createMvpGeneration({
+          idea: req.body.idea,
+          industry: req.body.industry,
+          targetAudience: req.body.targetAudience,
+          budget: req.body.budget,
+          result: fallbackPlan,
+          ip: req.ip,
+          sessionId: req.sessionID,
+        });
+        
+        res.json(fallbackPlan);
+      } catch (fallbackError) {
+        console.error("Fallback MVP generation also failed:", fallbackError);
+        res.status(500).json({ 
+          message: "Failed to generate MVP plan. Please try again later." 
+        });
+      }
     }
   });
 
@@ -325,7 +350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/advertisements", async (req, res) => {
     try {
       const storage = await getStorage();
-      const ads = await storage.getActiveAdvertisements();
+      const ads = await storage.getAdvertisements();
       res.json(ads);
     } catch (error) {
       console.error("Public ads fetch error:", error);

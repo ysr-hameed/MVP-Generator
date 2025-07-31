@@ -489,9 +489,9 @@ export class MemoryStorage implements IStorage {
   private apiKeys: ApiKey[] = [];
   private advertisements: Advertisement[] = [];
   private adSettings: AdSettings | undefined;
-  private autoBlogSettings: AutoBlogSettings | undefined;
+  protected autoBlogSettings: AutoBlogSettings | undefined;
   private autoBlogQueue: AutoBlogQueue[] = [];
-  private siteSettings: SiteSettings | undefined;
+  protected siteSettings: SiteSettings | undefined;
 
   async trackPageView(data: InsertAnalytics): Promise<Analytics> {
     const analytics: Analytics = {
@@ -664,6 +664,25 @@ export class MemoryStorage implements IStorage {
     return this.apiKeys.filter(k => k.provider === provider);
   }
 
+  async getApiKeys(provider: string): Promise<ApiKey[]> {
+    return this.apiKeys.filter(k => k.provider === provider);
+  }
+
+  async getApiKeyByValue(key: string): Promise<ApiKey | undefined> {
+    return this.apiKeys.find(k => k.key === key);
+  }
+
+  async updateApiKey(id: string, data: Partial<InsertApiKey>): Promise<ApiKey> {
+    const index = this.apiKeys.findIndex(k => k.id === id);
+    if (index === -1) throw new Error('API key not found');
+
+    this.apiKeys[index] = {
+      ...this.apiKeys[index],
+      ...data,
+    };
+    return this.apiKeys[index];
+  }
+
   async createApiKey(data: InsertApiKey): Promise<ApiKey> {
     const key: ApiKey = {
       id: `apikey_${Date.now()}_${Math.random().toString(36).slice(2)}`,
@@ -693,12 +712,8 @@ export class MemoryStorage implements IStorage {
     }
   }
 
-  async getApiKeyByValue(keyValue: string): Promise<ApiKey | undefined> {
-    return this.apiKeys.find(k => k.key === keyValue);
-  }
-
-  async incrementApiUsage(keyValue: string): Promise<void> {
-    const key = this.apiKeys.find(k => k.key === keyValue);
+  async incrementApiUsage(id: string): Promise<void> {
+    const key = this.apiKeys.find(k => k.id === id);
     if (key) {
       key.dailyUsage = (key.dailyUsage || 0) + 1;
       key.lastReset = new Date();

@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { mvpGeneratorSchema, type MvpGeneratorData } from "@shared/schema";
 import { Lightbulb, Loader2, ArrowRight, Sparkles, Target, DollarSign, Calendar } from "lucide-react";
+import { EnhancedMvpResults } from "@/components/enhanced-mvp-results";
 
 interface MvpPlan {
   coreFeatures: string[];
@@ -84,6 +85,20 @@ export function MvpGeneratorForm() {
   };
 
   if (generatedPlan) {
+    // Check if this is an enhanced plan (has comprehensive structure) or basic plan
+    const isEnhancedPlan = generatedPlan.technicalRequirements || generatedPlan.budgetBreakdown || generatedPlan.featureRoadmap;
+    
+    if (isEnhancedPlan) {
+      return (
+        <EnhancedMvpResults
+          mvpPlan={generatedPlan}
+          idea={form.getValues("idea")}
+          onNewGeneration={() => setGeneratedPlan(null)}
+        />
+      );
+    }
+    
+    // Fallback to basic display for simple plans
     return (
       <div className="space-y-12">
         {/* Generated Plan Display */}

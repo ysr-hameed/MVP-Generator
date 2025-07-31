@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getStorage } from "../storage";
 
 interface MvpPlan {
@@ -29,7 +29,7 @@ interface MvpPlan {
 }
 
 export class GeminiService {
-  private genAI: GoogleGenAI | null = null;
+  private genAI: GoogleGenerativeAI | null = null;
   private currentKeyIndex = 0;
   private apiKeys: string[] = [];
 
@@ -49,13 +49,13 @@ export class GeminiService {
       }
 
       if (this.apiKeys.length > 0) {
-        this.genAI = new GoogleGenAI({ apiKey: this.apiKeys[0] });
+        this.genAI = new GoogleGenerativeAI(this.apiKeys[0]);
       }
     } catch (error) {
       console.error("Failed to initialize Gemini API keys:", error);
       if (process.env.GEMINI_API_KEY) {
         this.apiKeys = [process.env.GEMINI_API_KEY];
-        this.genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
       }
     }
   }
@@ -69,8 +69,8 @@ export class GeminiService {
       // Check if this key has exceeded daily limits
       const storage = await getStorage();
       const keyData = await storage.getApiKeyByValue(apiKey);
-      if (keyData && keyData.dailyUsage < 50) { // Assuming 50 requests per day limit for free tier
-        this.genAI = new GoogleGenAI({ apiKey: apiKey });
+      if (keyData && (keyData.dailyUsage || 0) < 50) { // Assuming 50 requests per day limit for free tier
+        this.genAI = new GoogleGenerativeAI(apiKey);
         return;
       }
     } while (this.currentKeyIndex !== startIndex);
