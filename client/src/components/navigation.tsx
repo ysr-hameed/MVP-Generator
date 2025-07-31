@@ -1,21 +1,22 @@
-import { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
-import { AdDisplay } from "@/components/ad-display";
-import MobileNav from "@/components/ui/mobile-nav";
-import { Menu, X, Lightbulb } from "lucide-react";
+import { Sparkles, Menu, X } from "lucide-react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-export function Navigation() {
+export default function Navigation() {
   const [location] = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    { href: "/", label: "Home" },
-    { href: "/mvp-generator", label: "MVP Generator" },
-    { href: "/blog", label: "Blog" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-  ];
+  // Fetch site settings
+  const { data: siteSettings } = useQuery({
+    queryKey: ["/api/site-settings"],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  const siteName = siteSettings?.siteName || "MVP Generator AI";
 
   return (
     <header className="fixed top-0 w-full z-50 bg-background/95 backdrop-blur-md border-b border-border">
@@ -24,44 +25,57 @@ export function Navigation() {
           {/* Logo */}
           <Link href="/" data-testid="link-home-logo">
             <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
-                <Lightbulb className="w-6 h-6 text-white" />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-foreground">StartupPlan</span>
+              <Sparkles className="w-6 h-6 text-blue-400" />
+              <span className="text-xl font-bold gradient-text">
+                {siteName}
+              </span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-2">
-            {navItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <span 
-                  className={`nav-link ${
-                    location === item.href ? "text-primary bg-primary/10" : "text-muted-foreground"
-                  }`}
-                  data-testid={`nav-link-${item.label.toLowerCase()}`}
-                >
-                  {item.label}
-                </span>
-              </Link>
-            ))}
-            <AdDisplay position="header" />
+            {/* Add navigation items here */}
           </nav>
 
           {/* Actions */}
           <div className="flex items-center gap-4">
+            {/* Theme toggle */}
             <ModeToggle />
-            <div className="hidden md:block">
-              <Link href="/mvp-generator">
-                <Button className="btn-primary" data-testid="button-get-started">
-                  Get Started
-                </Button>
-              </Link>
-            </div>
-            <MobileNav />
+
+            {/* Mobile menu button */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="ml-auto md:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+              <span className="sr-only">Toggle Menu</span>
+            </Button>
           </div>
         </div>
       </div>
+
+      {/* Mobile menu */}
+      {isMobileMenuOpen && (
+        <div className="border-b border-border md:hidden">
+          <div className="mx-6 py-2 flex flex-col gap-3">
+            <Link href="/">
+              <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <Sparkles className="w-6 h-6 text-blue-400" />
+                <span className="text-xl font-bold gradient-text">
+                  {siteName}
+                </span>
+              </div>
+            </Link>
+            {/* Add mobile navigation items here */}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -7,8 +7,30 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env file
-config({ path: join(__dirname, '.env') });
+// Try to load .env from multiple locations
+const envPaths = [
+  join(__dirname, '.env'),          // Root directory
+  join(__dirname, 'server', '.env'), // Server directory
+  join(process.cwd(), '.env')       // Current working directory
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  try {
+    const result = config({ path: envPath });
+    if (result.parsed) {
+      console.log(`✓ Environment variables loaded from: ${envPath}`);
+      envLoaded = true;
+      break;
+    }
+  } catch (error) {
+    // Continue to next path
+  }
+}
+
+if (!envLoaded) {
+  console.warn("⚠️ No .env file found in expected locations");
+}
 
 // Set fallback database URL if not provided
 if (!process.env.DATABASE_URL) {

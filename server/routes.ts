@@ -58,7 +58,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const storage = await getStorage();
       const settings = await storage.getAdSettings();
-      
+
       if (settings) {
         res.json(settings);
       } else {
@@ -142,7 +142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.body.targetAudience,
           req.body.budget
         );
-        
+
         const storage = await getStorage();
         await storage.createMvpGeneration({
           idea: req.body.idea,
@@ -153,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ip: req.ip,
           sessionId: req.sessionID,
         });
-        
+
         res.json(fallbackPlan);
       } catch (fallbackError) {
         console.error("Fallback MVP generation also failed:", fallbackError);
@@ -530,7 +530,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate a single test post using enhanced blog generator
       const { enhancedBlogGenerator } = await import("./services/enhancedBlogGenerator");
       const result = await enhancedBlogGenerator.generateSinglePost();
-      
+
       if (result.success && result.post) {
         res.json({
           success: true,
@@ -991,6 +991,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res
         .status(500)
         .json({ message: error.message || "Failed to generate MVP plan" });
+    }
+  });
+
+  // Site settings endpoint (for IndexNow key and other SEO settings)
+  app.get("/api/site-settings", async (req, res) => {
+    try {
+      const storage = await getStorage();
+
+      // Get site config and SEO settings separately
+      const siteConfig = await storage.getSetting("site_config");
+      const seoSettings = await storage.getSetting("seo_settings");
+
+      // Return public settings only
+      const publicSettings = {
+        siteName: siteConfig?.value?.siteName || "MVP Generator AI",
+        siteDescription: siteConfig?.value?.siteDescription || "Generate comprehensive MVP plans using AI",
+        indexNowKey: seoSettings?.value?.indexNowKey || null,
+        googleSiteVerification: seoSettings?.value?.googleSiteVerification || null,
+        bingSiteVerification: seoSettings?.value?.bingSiteVerification || null,
+      };
+
+      res.json(publicSettings);
+    } catch (error) {
+      console.error("Site settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch site settings" });
     }
   });
 

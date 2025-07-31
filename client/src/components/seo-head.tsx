@@ -1,5 +1,5 @@
-
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 interface SEOHeadProps {
   title?: string;
@@ -22,8 +22,8 @@ interface SEOHeadProps {
 }
 
 export default function SEOHead({
-  title = "MVP Generator AI - Transform Ideas into Startup Plans",
-  description = "AI-powered tool that transforms startup ideas into comprehensive MVP plans with tech stacks, features, and roadmaps.",
+  title,
+  description,
   keywords = "MVP, startup, business plan, AI generator, tech stack, entrepreneur",
   ogTitle,
   ogDescription,
@@ -42,8 +42,18 @@ export default function SEOHead({
 }: SEOHeadProps) {
   useEffect(() => {
     // Set document title
-    document.title = title;
-    
+   const { data: siteSettings } = useQuery({
+    queryKey: ["/api/site-settings"],
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const siteName = siteSettings?.siteName || "MVP Generator AI";
+  const siteDescription = siteSettings?.siteDescription || "AI-powered tool that transforms startup ideas into comprehensive MVP plans with tech stacks, features, and roadmaps.";
+
+  const finalTitle = title || `${siteName} - Transform Ideas into Startup Plans`;
+  const finalDescription = description || siteDescription;
+    document.title = finalTitle;
+
     // Set language
     document.documentElement.lang = lang;
 
@@ -64,24 +74,24 @@ export default function SEOHead({
     };
 
     // Basic meta tags
-    setMetaTag("description", description);
+    setMetaTag("description", finalDescription);
     setMetaTag("keywords", keywords);
     setMetaTag("author", author);
     setMetaTag("robots", noindex ? "noindex, nofollow" : "index, follow");
     setMetaTag("viewport", "width=device-width, initial-scale=1.0");
 
     // Open Graph tags
-    setMetaTag("og:title", ogTitle || title, true);
-    setMetaTag("og:description", ogDescription || description, true);
+    setMetaTag("og:title", ogTitle || finalTitle, true);
+    setMetaTag("og:description", ogDescription || finalDescription, true);
     setMetaTag("og:image", ogImage, true);
     setMetaTag("og:type", publishedTime ? "article" : "website", true);
     setMetaTag("og:url", window.location.href, true);
-    setMetaTag("og:site_name", "MVP Generator AI", true);
+    setMetaTag("og:site_name", siteName, true);
 
     // Twitter Card tags
     setMetaTag("twitter:card", "summary_large_image");
-    setMetaTag("twitter:title", twitterTitle || ogTitle || title);
-    setMetaTag("twitter:description", twitterDescription || ogDescription || description);
+    setMetaTag("twitter:title", twitterTitle || ogTitle || finalTitle);
+    setMetaTag("twitter:description", twitterDescription || ogDescription || finalDescription);
     setMetaTag("twitter:image", twitterImage || ogImage);
     setMetaTag("twitter:site", "@mvpgeneratorai");
 
@@ -90,7 +100,7 @@ export default function SEOHead({
       setMetaTag("article:published_time", publishedTime, true);
       setMetaTag("article:author", author, true);
     }
-    
+
     if (modifiedTime) {
       setMetaTag("article:modified_time", modifiedTime, true);
     }
@@ -134,14 +144,14 @@ export default function SEOHead({
           const response = await fetch('/api/site-settings');
           const settings = await response.json();
           const indexNowKey = settings?.indexNowKey || import.meta.env.VITE_INDEXNOW_KEY;
-          
+
           if (!indexNowKey) {
             console.log('IndexNow key not configured, skipping submission');
             return;
           }
 
           const url = window.location.href;
-          
+
           // Use POST method with proper headers
           await fetch('/api/indexnow/submit', {
             method: 'POST',
