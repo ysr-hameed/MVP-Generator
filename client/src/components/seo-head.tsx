@@ -1,59 +1,64 @@
-import React from 'react';
+import { useQuery } from "@tanstack/react-query";
 
 interface SEOHeadProps {
   title?: string;
   description?: string;
   keywords?: string;
-  image?: string;
-  url?: string;
+  ogImage?: string;
+  ogType?: string;
+  twitterCard?: string;
+  canonicalUrl?: string;
+  structuredData?: any;
 }
 
-const SEOHead: React.FC<SEOHeadProps> = ({
-  title = "MVP Generator - Build Your Startup Idea",
-  description = "Transform your startup ideas into comprehensive MVP plans with our AI-powered generator. Get detailed business plans, technical specifications, and actionable insights.",
-  keywords = "MVP, startup, business plan, AI generator, entrepreneur, product development",
-  image = "/og-image.jpg",
-  url = typeof window !== 'undefined' ? window.location.href : ""
-}) => {
-  React.useEffect(() => {
-    // Update document title
-    document.title = title;
+export default function SEOHead({
+  title,
+  description,
+  keywords,
+  ogImage,
+  ogType = "website",
+  twitterCard = "summary_large_image",
+  canonicalUrl,
+  structuredData,
+}: SEOHeadProps) {
+  // Fetch site settings for default values
+  const { data: siteSettings } = useQuery({
+    queryKey: ["/api/site-settings"],
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
 
-    // Update meta tags
-    const updateMeta = (name: string, content: string) => {
-      let meta = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.name = name;
-        document.head.appendChild(meta);
-      }
-      meta.content = content;
-    };
+  const siteName = siteSettings?.siteName || "MVP Generator AI";
+  const siteDescription = siteSettings?.description || "AI-powered MVP generator for entrepreneurs and startups";
+  const finalTitle = title ? `${title} | ${siteName}` : siteName;
+  const finalDescription = description || siteDescription;
+  const finalKeywords = keywords || siteSettings?.keywords || "MVP, startup, AI, generator, business plan";
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  const finalCanonicalUrl = canonicalUrl || (typeof window !== 'undefined' ? window.location.href : '');
+  const finalOgImage = ogImage || `${baseUrl}/og-image.jpg`;
 
-    const updateProperty = (property: string, content: string) => {
-      let meta = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.setAttribute('property', property);
-        document.head.appendChild(meta);
-      }
-      meta.content = content;
-    };
+  return (
+    <>
+      <title>{finalTitle}</title>
+      <meta name="description" content={finalDescription} />
+      <meta name="keywords" content={finalKeywords} />
 
-    updateMeta('description', description);
-    updateMeta('keywords', keywords);
-    updateProperty('og:title', title);
-    updateProperty('og:description', description);
-    updateProperty('og:image', image);
-    updateProperty('og:url', url);
-    updateProperty('og:type', 'website');
-    updateMeta('twitter:card', 'summary_large_image');
-    updateMeta('twitter:title', title);
-    updateMeta('twitter:description', description);
-    updateMeta('twitter:image', image);
-  }, [title, description, keywords, image, url]);
+      <meta property="og:title" content={finalTitle} />
+      <meta property="og:description" content={finalDescription} />
+      <meta property="og:image" content={finalOgImage} />
+      <meta property="og:type" content={ogType} />
+      {canonicalUrl && <link rel="canonical" href={finalCanonicalUrl} />}
 
-  return null;
-};
+      <meta name="twitter:card" content={twitterCard} />
+      <meta name="twitter:title" content={finalTitle} />
+      <meta name="twitter:description" content={finalDescription} />
+      <meta name="twitter:image" content={finalOgImage} />
 
-export default SEOHead;
+      {/* Structured Data (JSON-LD) */}
+      {structuredData && (
+        <script type="application/ld+json">
+          {JSON.stringify(structuredData)}
+        </script>
+      )}
+    </>
+  );
+}

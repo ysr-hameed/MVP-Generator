@@ -34,7 +34,26 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-2">
-            {/* Add navigation items here */}
+            <Link href="/mvp-generator">
+              <Button variant="ghost" className="text-sm">
+                MVP Generator
+              </Button>
+            </Link>
+            <Link href="/blog">
+              <Button variant="ghost" className="text-sm">
+                Blog
+              </Button>
+            </Link>
+            <Link href="/about">
+              <Button variant="ghost" className="text-sm">
+                About
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button variant="ghost" className="text-sm">
+                Contact
+              </Button>
+            </Link>
           </nav>
 
           {/* Actions */}
@@ -63,16 +82,32 @@ export default function Navigation() {
       {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="border-b border-border md:hidden">
-          <div className="mx-6 py-2 flex flex-col gap-3">
-            <Link href="/">
-              <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <Sparkles className="w-6 h-6 text-blue-400" />
-                <span className="text-xl font-bold gradient-text">
-                  {siteName}
-                </span>
-              </div>
+          <div className="mx-6 py-4 flex flex-col gap-4">
+            <Link href="/" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start text-sm">
+                Home
+              </Button>
             </Link>
-            {/* Add mobile navigation items here */}
+            <Link href="/mvp-generator" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start text-sm">
+                MVP Generator
+              </Button>
+            </Link>
+            <Link href="/blog" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start text-sm">
+                Blog
+              </Button>
+            </Link>
+            <Link href="/about" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start text-sm">
+                About
+              </Button>
+            </Link>
+            <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button variant="ghost" className="w-full justify-start text-sm">
+                Contact
+              </Button>
+            </Link>
           </div>
         </div>
       )}
