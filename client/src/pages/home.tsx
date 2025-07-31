@@ -4,6 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import SEOHead from "@/components/seo-head";
 import { AdDisplay } from "@/components/ad-display";
+import { 
+  ArrowRight, 
+  CheckCircle, 
+  Zap, 
+  BarChart3, 
+  Clock, 
+  Shield, 
+  Lightbulb, 
+  TrendingUp, 
+  Users, 
+  Globe 
+} from "lucide-react";
 
 export default function Home() {
   const structuredData = {
