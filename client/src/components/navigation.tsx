@@ -1,47 +1,33 @@
-
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { 
-  Sparkles, 
   Menu, 
   X, 
   Home, 
-  Lightbulb, 
-  BookOpen, 
-  MessageCircle, 
+  Sparkles, 
+  FileText, 
+  Mail, 
   Info,
-  ChevronRight
+  Settings,
+  BarChart3
 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Navigation() {
-  const [location] = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [location] = useLocation();
+  const { user, isAdmin } = useAuth();
 
-  // Fetch site settings
-  const { data: siteSettings } = useQuery({
-    queryKey: ["/api/site-settings"],
+  const { data: siteConfig } = useQuery({
+    queryKey: ["/api/admin/site-config"],
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 
-  const siteName = siteSettings?.siteName || "MVP Generator AI";
-
-  const navItems = [
-    { href: "/", label: "Home", icon: Home },
-    { href: "/mvp-generator", label: "MVP Generator", icon: Lightbulb },
-    { href: "/blog", label: "Blog", icon: BookOpen },
-    { href: "/about", label: "About", icon: Info },
-    { href: "/contact", label: "Contact", icon: MessageCircle },
-  ];
-
-  const isActive = (href: string) => {
-    if (href === "/" && location === "/") return true;
-    if (href !== "/" && location.startsWith(href)) return true;
-    return false;
-  };
+  const siteName = siteConfig?.siteName || "MVP Generator AI";
 
   return (
     <>
@@ -117,39 +103,52 @@ export default function Navigation() {
           {/* Navigation Items */}
           <nav className="flex-1 p-6">
             <div className="space-y-2">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
-                
-                return (
-                  <Link 
-                    key={item.href} 
-                    href={item.href}
-                    onClick={() => setIsSidebarOpen(false)}
-                  >
-                    <div className={cn(
-                      "flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 group cursor-pointer",
-                      active 
-                        ? "bg-primary/10 text-primary border border-primary/20" 
-                        : "hover:bg-muted/50 text-muted-foreground hover:text-foreground"
-                    )}>
-                      <Icon className={cn(
-                        "w-5 h-5 transition-colors",
-                        active ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                      )} />
-                      <span className="font-medium text-sm flex-1">
-                        {item.label}
-                      </span>
-                      <ChevronRight className={cn(
-                        "w-4 h-4 transition-all duration-200",
-                        active 
-                          ? "text-primary opacity-100" 
-                          : "text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-1"
-                      )} />
-                    </div>
-                  </Link>
-                );
-              })}
+              <Link href="/" onClick={() => setIsSidebarOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Home className="mr-2 h-4 w-4" />
+                  Home
+                </Button>
+              </Link>
+              <Link href="/mvp-generator" onClick={() => setIsSidebarOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  MVP Generator
+                </Button>
+              </Link>
+              <Link href="/blog" onClick={() => setIsSidebarOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Blog
+                </Button>
+              </Link>
+              <Link href="/contact" onClick={() => setIsSidebarOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Mail className="mr-2 h-4 w-4" />
+                  Contact
+                </Button>
+              </Link>
+              <Link href="/about" onClick={() => setIsSidebarOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  <Info className="mr-2 h-4 w-4" />
+                  About
+                </Button>
+              </Link>
+              {isAdmin && (
+                <Link href="/admin" onClick={() => setIsSidebarOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
+              {isAdmin && (
+                <Link href="/admin/analytics" onClick={() => setIsSidebarOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start">
+                    <BarChart3 className="mr-2 h-4 w-4" />
+                    Analytics
+                  </Button>
+                </Link>
+              )}
             </div>
           </nav>
 

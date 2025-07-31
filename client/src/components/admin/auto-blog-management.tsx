@@ -36,6 +36,8 @@ const autoBlogSettingsSchema = insertAutoBlogSettingsSchema.extend({
     text: z.string(),
     placement: z.string()
   })).optional(),
+  dailyCount: z.number().min(1).max(10).default(1),
+  scheduleTime: z.string().default("09:00"),
 });
 
 export function AutoBlogManagement() {
@@ -59,6 +61,8 @@ export function AutoBlogManagement() {
       frequency: settings?.frequency || "daily",
       topics: settings?.topics || [],
       affiliateLinks: settings?.affiliateLinks || [],
+      dailyCount: settings?.dailyCount || 1,
+      scheduleTime: settings?.scheduleTime || "09:00",
     },
   });
 
@@ -70,6 +74,8 @@ export function AutoBlogManagement() {
         frequency: settings.frequency,
         topics: settings.topics || [],
         affiliateLinks: settings.affiliateLinks || [],
+        dailyCount: settings.dailyCount || 1,
+        scheduleTime: settings.scheduleTime || "09:00",
       });
     }
   }, [settings, form]);
@@ -295,6 +301,51 @@ export function AutoBlogManagement() {
                             <SelectItem value="monthly">Monthly</SelectItem>
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="dailyCount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-300">Daily Blog Count</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                              <SelectValue placeholder="Select daily count" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">1 Blog per day</SelectItem>
+                            <SelectItem value="2">2 Blogs per day</SelectItem>
+                            <SelectItem value="3">3 Blogs per day</SelectItem>
+                            <SelectItem value="4">4 Blogs per day</SelectItem>
+                            <SelectItem value="5">5 Blogs per day</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="scheduleTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-300">Schedule Time</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="time"
+                            className="bg-slate-700 border-slate-600 text-white"
+                          />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}

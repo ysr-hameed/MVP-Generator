@@ -55,7 +55,7 @@ export default function Home() {
 
           <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-12">
             <div className="text-center max-w-4xl mx-auto space-y-8">
-              <h1 className="hero-font text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-balance">
+              <h1 className="font-hero text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight text-balance">
                 Transform Ideas into 
                 <span className="block text-primary">Startup Plans</span>
               </h1>

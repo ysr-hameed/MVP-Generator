@@ -190,10 +190,19 @@ export const insertAdSettingsSchema = createInsertSchema(adSettings).omit({
   updatedAt: true,
 });
 
-export const insertAutoBlogSettingsSchema = createInsertSchema(autoBlogSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertAutoBlogSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  frequency: z.enum(["daily", "weekly", "monthly"]).default("daily"),
+  topics: z.array(z.string()).optional(),
+  affiliateLinks: z.array(z.object({
+    url: z.string().url(),
+    text: z.string(),
+    placement: z.string()
+  })).optional(),
+  dailyCount: z.number().min(1).max(10).default(1),
+  scheduleTime: z.string().default("09:00"),
+  lastRun: z.string().optional(),
+  nextRun: z.string().optional(),
 });
 
 export const insertAutoBlogQueueSchema = createInsertSchema(autoBlogQueue).omit({
