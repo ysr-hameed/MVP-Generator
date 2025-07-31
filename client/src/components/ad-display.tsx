@@ -97,43 +97,53 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
         if (adCode.includes('atOptions') || adCode.includes('document.write')) {
           console.log('Executing Adsterra-style ad script for container:', containerId);
           
-          // For Adsterra ads, create a temporary script element
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = `<div id="${containerId}-content"></div>`;
-          container.appendChild(tempDiv);
+          // Create content div for the ad
+          const adContentDiv = document.createElement('div');
+          adContentDiv.id = `${containerId}-content`;
+          adContentDiv.style.cssText = 'width: 100%; height: 100%; display: block;';
+          container.appendChild(adContentDiv);
 
-          // Execute the ad script in the global context
+          // Override document.write temporarily for this container
+          const originalWrite = document.write;
+          const originalWriteln = document.writeln;
+          
+          document.write = function(content: string) {
+            const contentDiv = document.getElementById(`${containerId}-content`);
+            if (contentDiv) {
+              contentDiv.innerHTML += content;
+            }
+          };
+          
+          document.writeln = function(content: string) {
+            const contentDiv = document.getElementById(`${containerId}-content`);
+            if (contentDiv) {
+              contentDiv.innerHTML += content + '\n';
+            }
+          };
+
+          // Execute the ad script using Function constructor (safer than eval)
           try {
-            // Create and execute script
-            const scriptTag = document.createElement('script');
-            scriptTag.type = 'text/javascript';
-            scriptTag.innerHTML = adCode;
+            console.log('Executing inline ad script:', adCode.substring(0, 100) + '...');
             
-            // Override document.write temporarily for this container
-            const originalWrite = document.write;
-            document.write = function(content: string) {
-              const contentDiv = document.getElementById(`${containerId}-content`);
-              if (contentDiv) {
-                contentDiv.innerHTML += content;
-              }
-            };
-
-            // Append and execute script
-            document.head.appendChild(scriptTag);
+            // Extract and execute the JavaScript code
+            const executeCode = new Function(adCode);
+            executeCode();
             
-            // Restore document.write after a delay
+            // Restore document.write after execution
             setTimeout(() => {
               document.write = originalWrite;
-              // Remove the temporary script
-              if (scriptTag.parentNode) {
-                scriptTag.parentNode.removeChild(scriptTag);
-              }
-            }, 500);
+              document.writeln = originalWriteln;
+            }, 1000);
 
           } catch (error) {
             console.error('Adsterra script execution error:', error);
+            // Restore document.write on error
+            document.write = originalWrite;
+            document.writeln = originalWriteln;
+            
             container.innerHTML = `<div style="padding: 20px; text-align: center; color: #666; border: 1px dashed #ccc; border-radius: 4px;">
-              <p>Ad content loading...</p>
+              <p>Loading advertisement...</p>
+              <div style="width: 20px; height: 20px; border: 2px solid #e3e3e3; border-top: 2px solid #333; border-radius: 50%; animation: spin 1s linear infinite; margin: 10px auto;"></div>
             </div>`;
           }
         } else {
