@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
@@ -59,40 +58,50 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
         try {
           // Mark as mounted immediately to prevent duplicate execution
           setMountedAds(prev => new Set([...prev, ad.id]));
-          
+
           if (ad.adCode && ad.adCode.trim()) {
             // Small delay to ensure DOM is ready
             setTimeout(() => {
               try {
                 if (ad.adCode.includes('<script')) {
-                  // Create a temporary div to parse the ad code
-                  const tempDiv = document.createElement('div');
-                  tempDiv.innerHTML = ad.adCode;
-                  
-                  // Find and execute scripts
-                  const scripts = tempDiv.getElementsByTagName('script');
-                  Array.from(scripts).forEach((script, index) => {
-                    if (script.src) {
-                      // External script
-                      const newScript = document.createElement('script');
-                      newScript.src = script.src;
-                      newScript.async = true;
-                      newScript.defer = true;
-                      newScript.onload = () => console.log('Ad script loaded:', script.src);
-                      newScript.onerror = () => console.log('Ad script failed to load:', script.src);
-                      document.head.appendChild(newScript);
-                    } else if (script.textContent && script.textContent.trim()) {
-                      // Inline script with error handling
-                      try {
-                        const newScript = document.createElement('script');
-                        newScript.textContent = script.textContent;
-                        newScript.id = `ad-script-${ad.id}-${index}`;
-                        document.body.appendChild(newScript);
-                      } catch (scriptError) {
-                        console.error('Error executing inline script:', scriptError);
+                    // Create a temporary div to parse the ad code
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = ad.adCode;
+
+                    // Find the target ad container in the actual DOM
+                    const adContainer = document.querySelector(`#ad-container-${ad.id}`);
+                    if (adContainer) {
+                      // Add any non-script content to the container
+                      const nonScriptContent = tempDiv.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
+                      if (nonScriptContent.trim()) {
+                        adContainer.innerHTML = nonScriptContent;
                       }
                     }
-                  });
+
+                    // Find and execute scripts
+                    const scripts = tempDiv.getElementsByTagName('script');
+                    Array.from(scripts).forEach((script, index) => {
+                      if (script.src) {
+                        // External script
+                        const newScript = document.createElement('script');
+                        newScript.src = script.src;
+                        newScript.async = true;
+                        newScript.defer = true;
+                        newScript.onload = () => console.log('Ad script loaded:', script.src);
+                        newScript.onerror = () => console.log('Ad script failed to load:', script.src);
+                        document.head.appendChild(newScript);
+                      } else if (script.textContent && script.textContent.trim()) {
+                        // Inline script with error handling
+                        try {
+                          const newScript = document.createElement('script');
+                          newScript.textContent = script.textContent;
+                          newScript.id = `ad-script-${ad.id}-${index}`;
+                          document.body.appendChild(newScript);
+                        } catch (scriptError) {
+                          console.error('Error executing inline script:', scriptError);
+                        }
+                      }
+                    });
                 }
               } catch (error) {
                 console.error('Error processing ad code:', error);
@@ -153,18 +162,18 @@ export function ResponsiveAdDisplay({ position, className = "" }: AdDisplayProps
           align-items: center;
           margin: 1rem 0;
         }
-        
+
         @media (max-width: 768px) {
           .responsive-ad-wrapper {
             margin: 0.5rem 0;
           }
-          
+
           .responsive-ad-wrapper .ad-wrapper {
             transform: scale(0.8);
             transform-origin: center;
           }
         }
-        
+
         @media (max-width: 480px) {
           .responsive-ad-wrapper .ad-wrapper {
             transform: scale(0.6);
