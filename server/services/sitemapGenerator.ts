@@ -10,14 +10,15 @@ export class SitemapGenerator {
       const blogPosts = await storage.getBlogPosts();
       const publishedPosts = blogPosts.filter(post => post.publishedAt !== null);
 
-      // Static pages
+      // Enhanced static pages with better SEO
       const staticPages = [
-        { url: "", changefreq: "daily", priority: "1.0" },
-        { url: "/blog", changefreq: "daily", priority: "0.9" },
+        { url: "", changefreq: "hourly", priority: "1.0", lastmod: currentDate },
+        { url: "/mvp-generator", changefreq: "hourly", priority: "0.95", lastmod: currentDate },
+        { url: "/blog", changefreq: "hourly", priority: "0.9", lastmod: currentDate },
         { url: "/about", changefreq: "weekly", priority: "0.7" },
         { url: "/contact", changefreq: "weekly", priority: "0.6" },
-        { url: "/privacy", changefreq: "monthly", priority: "0.5" },
-        { url: "/terms", changefreq: "monthly", priority: "0.5" },
+        { url: "/privacy", changefreq: "monthly", priority: "0.4" },
+        { url: "/terms", changefreq: "monthly", priority: "0.4" },
       ];
 
       let sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -31,33 +32,55 @@ export class SitemapGenerator {
 
       // Add static pages
       for (const page of staticPages) {
+        const lastmod = page.lastmod || currentDate;
         sitemapXml += `
   <url>
     <loc>${baseUrl}${page.url}</loc>
-    <lastmod>${currentDate}</lastmod>
+    <lastmod>${lastmod}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
+    <mobile:mobile/>
   </url>`;
       }
 
-      // Add blog posts
-      for (const post of publishedPosts) {
+      // Add blog posts sorted by date (newest first for better crawling)
+      const sortedPosts = publishedPosts.sort((a, b) => 
+        new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime()
+      );
+
+      for (const post of sortedPosts) {
         const postDate = post.publishedAt ? new Date(post.publishedAt).toISOString() : currentDate;
+        const isRecent = new Date(postDate).getTime() > (Date.now() - 7 * 24 * 60 * 60 * 1000); // Last 7 days
+        
         sitemapXml += `
   <url>
     <loc>${baseUrl}/blog/${post.slug}</loc>
     <lastmod>${postDate}</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>`;
+    <changefreq>${isRecent ? 'daily' : 'weekly'}</changefreq>
+    <priority>${isRecent ? '0.85' : '0.8'}</priority>
+    <mobile:mobile/>`;
         
         // Add image information if available
         if (post.imageUrl) {
           sitemapXml += `
     <image:image>
       <image:loc>${post.imageUrl}</image:loc>
-      <image:caption>${post.title}</image:caption>
-      <image:title>${post.title}</image:title>
+      <image:caption>${post.title.replace(/[<>&"']/g, '')}</image:caption>
+      <image:title>${post.title.replace(/[<>&"']/g, '')}</image:title>
     </image:image>`;
+        }
+
+        // Add news annotation for recent posts
+        if (isRecent) {
+          sitemapXml += `
+    <news:news>
+      <news:publication>
+        <news:name>MVP Generator AI Blog</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>${postDate}</news:publication_date>
+      <news:title>${post.title.replace(/[<>&"']/g, '')}</news:title>
+    </news:news>`;
         }
         
         sitemapXml += `

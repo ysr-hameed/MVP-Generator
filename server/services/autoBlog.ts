@@ -437,20 +437,49 @@ CONTENT FORMATTING REQUIREMENTS:
       const now = new Date();
       let postsToSchedule = 0;
 
+      // Check if it's the right time to publish
+      const publishTime = settings.publishTime || '09:00';
+      const [publishHour, publishMinute] = publishTime.split(':').map(Number);
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+
+      // Only schedule if we're within 30 minutes of the scheduled time
+      const scheduledTime = publishHour * 60 + publishMinute;
+      const currentTime = currentHour * 60 + currentMinute;
+      const timeDiff = Math.abs(currentTime - scheduledTime);
+
+      if (timeDiff > 30) {
+        return; // Not the right time yet
+      }
+
       // Determine how many posts to schedule based on frequency
-      if (settings.frequency.startsWith('daily')) {
+      if (settings.frequency === 'daily') {
         postsToSchedule = settings.dailyPostCount || 1;
-      } else if (settings.frequency.startsWith('weekly')) {
+      } else if (settings.frequency === 'weekly') {
         // Only schedule on specific days for weekly
         const dayOfWeek = now.getDay();
         if (dayOfWeek === 1) { // Monday
           postsToSchedule = settings.weeklyPostCount || 1;
         }
-      } else if (settings.frequency.startsWith('monthly')) {
+      } else if (settings.frequency === 'monthly') {
         // Only schedule on first day of month
         const dayOfMonth = now.getDate();
         if (dayOfMonth === 1) {
           postsToSchedule = settings.monthlyPostCount || 1;
+        }
+      }
+
+      // For daily posts, spread them throughout the day
+      if (settings.frequency === 'daily' && postsToSchedule > 1) {
+        const intervals = Math.floor(24 / postsToSchedule); // Hours between posts
+        const currentPostSlot = Math.floor(currentHour / intervals);
+        const expectedHour = currentPostSlot * intervals + publishHour;
+        
+        // Only publish one post at a time
+        if (Math.abs(currentHour - expectedHour) <= 1) {
+          postsToSchedule = 1;
+        } else {
+          postsToSchedule = 0;
         }
       }
 
@@ -468,28 +497,35 @@ CONTENT FORMATTING REQUIREMENTS:
       }
 
       // Update last run time
-      await storage.updateAutoBlogSettings({
-        lastRun: now,
-        nextRun: this.calculateNextRun(settings.frequency, now)
-      });
-
       if (postsToSchedule > 0) {
-        console.log(`Scheduled ${postsToSchedule} new blog posts for generation`);
+        await storage.updateAutoBlogSettings({
+          lastRun: now,
+          nextRun: this.calculateNextRun(settings.frequency, now, publishTime)
+        });
+
+        console.log(`Scheduled ${postsToSchedule} new blog posts for generation at ${publishTime}`);
       }
     } catch (error) {
       console.error("Auto blog scheduling error:", error);
     }
   }
 
-  private calculateNextRun(frequency: string, from: Date): Date {
+  private calculateNextRun(frequency: string, from: Date, publishTime?: string): Date {
     const next = new Date(from);
+    
+    // Set the time to the scheduled publishing time
+    if (publishTime) {
+      const [hour, minute] = publishTime.split(':').map(Number);
+      next.setHours(hour, minute, 0, 0);
+    }
 
-    if (frequency.startsWith('daily')) {
+    if (frequency === 'daily') {
       next.setDate(next.getDate() + 1);
-    } else if (frequency.startsWith('weekly')) {
+    } else if (frequency === 'weekly') {
       next.setDate(next.getDate() + 7);
-    } else if (frequency.startsWith('monthly')) {
+    } else if (frequency === 'monthly') {
       next.setMonth(next.getMonth() + 1);
+      next.setDate(1); // First day of next month
     }
 
     return next;

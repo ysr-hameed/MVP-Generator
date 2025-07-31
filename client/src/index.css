@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=Merriweather:wght@300;400;700;900&family=Roboto+Slab:wght@300;400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -71,12 +71,43 @@
     @apply bg-background text-foreground;
   }
   
-  /* Remove default input outlines */
+  /* Remove default input outlines and focus rings */
   input:focus,
   textarea:focus,
-  select:focus {
+  select:focus,
+  button:focus {
     outline: none !important;
+    box-shadow: none !important;
+    border-color: hsl(var(--primary)) !important;
   }
+  
+  /* Remove focus-visible outline */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Font family classes */
+.font-hero {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.font-paragraph {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.font-heading {
+  font-family: 'Roboto Slab', serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
 }
 
 /* Logo text styling */
@@ -217,11 +248,27 @@
   }
 
   .form-input {
-    @apply w-full px-4 py-3 border border-input rounded-xl focus:border-primary bg-background text-foreground resize-none transition-all duration-200 outline-none;
+    @apply w-full px-4 py-3 border border-input rounded-xl focus:border-primary bg-background text-foreground resize-none transition-all duration-200;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .form-input:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: hsl(var(--primary)) !important;
   }
 
   .form-select {
-    @apply w-full px-4 py-3 border border-input rounded-xl focus:border-primary bg-background text-foreground transition-all duration-200 outline-none;
+    @apply w-full px-4 py-3 border border-input rounded-xl focus:border-primary bg-background text-foreground transition-all duration-200;
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  .form-select:focus {
+    outline: none !important;
+    box-shadow: none !important;
+    border-color: hsl(var(--primary)) !important;
   }
 
   .loading-spinner {

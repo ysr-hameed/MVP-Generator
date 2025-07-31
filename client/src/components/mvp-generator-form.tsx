@@ -262,11 +262,11 @@ export function MvpGeneratorForm() {
   return (
     <Card className="card-elevated max-w-4xl mx-auto">
       <CardHeader className="space-y-4">
-        <CardTitle className="heading-md flex items-center gap-3">
+        <CardTitle className="heading-md font-heading flex items-center gap-3">
           <Lightbulb className="w-7 h-7 text-primary" />
           Generate Your MVP Plan
         </CardTitle>
-        <p className="body-md text-muted-foreground">
+        <p className="body-md font-paragraph text-muted-foreground">
           Provide details about your startup idea to get a comprehensive business plan
         </p>
       </CardHeader>
