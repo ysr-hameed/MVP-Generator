@@ -12,24 +12,30 @@ let pool: Pool | null = null;
 async function initializeDatabase() {
   if (db) return db; // Already initialized
   
-  if (process.env.DATABASE_URL) {
-    try {
-      pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      db = drizzle({ client: pool, schema });
-      console.log('Database connection established');
-      
-      // Auto-create required tables if they don't exist
-      await createTablesIfNotExist(db);
-      
-      return db;
-    } catch (error) {
-      console.warn('Database connection failed, using memory storage:', error);
-      db = null;
-    }
-  } else {
-    console.log('No DATABASE_URL provided, using memory storage');
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is required');
   }
-  return null;
+  
+  try {
+    console.log('Connecting to database...');
+    pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    
+    // Test the connection
+    const client = await pool.connect();
+    await client.query('SELECT NOW()');
+    client.release();
+    
+    db = drizzle({ client: pool, schema });
+    console.log('Database connection established');
+    
+    // Auto-create required tables if they don't exist
+    await createTablesIfNotExist(db);
+    
+    return db;
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    throw error;
+  }
 }
 
 async function createTablesIfNotExist(database: any) {
