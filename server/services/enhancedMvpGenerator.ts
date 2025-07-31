@@ -97,7 +97,7 @@ export class EnhancedMvpGenerator {
   ): Promise<EnhancedMvpPlan> {
     const currentYear = new Date().getFullYear();
     const currentTrends = this.getCurrentTechTrends();
-    
+
     const enhancedPrompt = `
 You are an expert startup advisor and technical architect. Generate a comprehensive, actionable MVP plan for ${currentYear} with the latest technology trends and market insights.
 
@@ -359,6 +359,19 @@ Make recommendations specific to ${currentYear} trends and technologies. Be prac
         longTerm: ["Raise growth funding", "Expand feature set", "Enter new markets"]
       }
     };
+  }
+
+  private generatePrompt(idea: string, industry: string, targetAudience: string, budget: string): string {
+    return `You are an expert startup advisor. Generate a UNIQUE, CUSTOMIZED MVP plan specifically for this startup idea. DO NOT use generic templates or copy previous responses.
+
+SPECIFIC STARTUP REQUIREMENTS:
+Idea: ${idea}
+Industry: ${industry}
+Target Audience: ${targetAudience}
+Budget: ${budget}
+
+Analyze this specific idea thoroughly and create a tailored, industry-specific MVP plan. Consider the unique aspects of this idea, target market dynamics, and budget constraints. Generate a comprehensive MVP plan with the following sections. Respond with valid JSON only:
+`;
   }
 }
 

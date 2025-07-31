@@ -40,8 +40,12 @@ export class GeminiService {
   private async initializeApiKeys() {
     try {
       const storage = await getStorage();
+      
+      // Force refresh of API keys from database
       const keys = await storage.getActiveApiKeys("gemini");
-      this.apiKeys = keys.map(k => k.key);
+      this.apiKeys = keys.map(k => k.key).filter(key => key && key.trim());
+      
+      console.log(`🔄 Loading API keys from database: Found ${this.apiKeys.length} active Gemini keys`);
 
       // Fallback to environment variable if no keys in database
       if (this.apiKeys.length === 0 && process.env.GEMINI_API_KEY) {
@@ -63,13 +67,21 @@ export class GeminiService {
 
       if (this.apiKeys.length > 0) {
         this.genAI = new GoogleGenerativeAI(this.apiKeys[0]);
-        console.log(`✓ Initialized Gemini service with ${this.apiKeys.length} API keys`);
+        console.log(`✓ Initialized Gemini service with ${this.apiKeys.length} API keys using model: gemini-1.5-flash`);
+        
+        // Log available keys (first 8 chars only for security)
+        this.apiKeys.forEach((key, index) => {
+          console.log(`  Key ${index + 1}: ${key.substring(0, 8)}...`);
+        });
+      } else {
+        console.warn("⚠️ No valid Gemini API keys found. MVP generation will use fallback service.");
       }
     } catch (error) {
       console.error("Failed to initialize Gemini API keys:", error);
       if (process.env.GEMINI_API_KEY) {
         this.apiKeys = [process.env.GEMINI_API_KEY];
         this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        console.log("✓ Using environment API key as fallback");
       }
     }
   }
@@ -110,14 +122,14 @@ export class GeminiService {
     }
 
     const prompt = `
-You are an expert startup advisor and product strategist. Based on the following startup idea, generate a comprehensive MVP plan.
+You are an expert startup advisor and product strategist. Based on the following startup idea, generate a comprehensive MVP plan tailored to the user's specific requirements.
 
 Startup Idea: ${idea}
 Industry: ${industry}
 Target Audience: ${targetAudience}
 Budget Range: ${budget}
 
-Please provide a detailed MVP plan with the following structure. Respond ONLY with valid JSON:
+Generate a unique, customized MVP plan based on this specific idea. Do NOT use generic templates. Please provide a detailed MVP plan with the following structure. Respond ONLY with valid JSON:
 
 {
   "coreFeatures": ["list of 5-8 essential features for MVP"],
@@ -150,7 +162,15 @@ Focus on practical, actionable advice that considers the budget constraints and 
 `;
 
     try {
-      const model = this.genAI!.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = this.genAI!.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: {
+          temperature: 0.9,
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 8192,
+        }
+      });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -180,7 +200,15 @@ Focus on practical, actionable advice that considers the budget constraints and 
 
           // Retry with new key
           try {
-            const model = this.genAI!.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = this.genAI!.getGenerativeModel({ 
+              model: "gemini-1.5-flash",
+              generationConfig: {
+                temperature: 0.9,
+                topP: 0.8,
+                topK: 40,
+                maxOutputTokens: 8192,
+              }
+            });
             const result = await model.generateContent(prompt);
             const response = await result.response;
             const text = response.text();
@@ -231,7 +259,15 @@ Focus on practical, actionable advice that considers the budget constraints and 
     }
 
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const model = this.genAI.getGenerativeModel({ 
+        model: "gemini-1.5-flash",
+        generationConfig: {
+          temperature: 0.7,
+          topP: 0.8,
+          topK: 40,
+          maxOutputTokens: 8192,
+        }
+      });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
@@ -257,7 +293,15 @@ Focus on practical, actionable advice that considers the budget constraints and 
           
           // Retry with new key
           try {
-            const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = this.genAI.getGenerativeModel({ 
+              model: "gemini-1.5-flash",
+              generationConfig: {
+                temperature: 0.7,
+                topP: 0.8,
+                topK: 40,
+                maxOutputTokens: 8192,
+              }
+            });
             const result = await model.generateContent(prompt);
             const response = await result.response;
             return response.text();
