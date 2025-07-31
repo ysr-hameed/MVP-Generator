@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import SEOHead from "@/components/seo-head";
 import AdDisplay from "@/components/ad-display";
 import { 
-  ArrowRight, 
   CheckCircle, 
   Zap, 
   BarChart3, 
@@ -14,7 +13,8 @@ import {
   Lightbulb, 
   TrendingUp, 
   Users, 
-  Globe 
+  Globe,
+  ArrowRight
 } from "lucide-react";
 
 export default function Home() {

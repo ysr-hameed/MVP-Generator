@@ -39,52 +39,47 @@ class GeminiService {
   }
 
   async generateText(prompt: string, retries = 3): Promise<string> {
-    if (this.availableKeys.length === 0) {
+    let currentApiKey = await ApiKeyManager.getAvailableApiKey("gemini");
+    if (!currentApiKey) {
       throw new Error("No Gemini API keys available");
     }
 
-    for (let attempt = 0; attempt < retries; attempt++) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
       try {
-        const currentKey = this.availableKeys[this.currentKeyIndex % this.availableKeys.length];
-        const client = this.clients.get(currentKey);
-
-        if (!client) {
-          throw new Error("Client not found for current key");
-        }
-
-        const model = client.getGenerativeModel({ model: this.model });
+        const genAI = new GoogleGenerativeAI(currentApiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
 
-        if (text && text.trim()) {
-          // Increment usage for this key
-          await ApiKeyManager.incrementUsage(currentKey);
+        // Increment usage for successful API call
+        await ApiKeyManager.incrementUsage(currentApiKey);
 
-          return text.trim();
-        }
-
-        throw new Error("Empty response from Gemini");
+        return text;
       } catch (error: any) {
-        console.error(`Gemini API error (attempt ${attempt + 1}):`, error.message);
+        console.error(`Gemini API error (attempt ${attempt + 1}/${retries + 1}):`, error.message);
 
-        if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('quota') || error.message?.includes('PERMISSION_DENIED')) {
-          // Try next key
-          this.currentKeyIndex = (this.currentKeyIndex + 1) % this.availableKeys.length;
-          console.log(`Switching to next API key (${this.currentKeyIndex + 1}/${this.availableKeys.length})`);
+        // Handle API key rotation on errors
+        const nextKey = await ApiKeyManager.handleApiError(currentApiKey, error);
+
+        if (attempt < retries && nextKey) {
+          console.log(`🔄 Switching to next API key for retry...`);
+          currentApiKey = nextKey;
+          await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Exponential backoff
+          continue;
         }
 
-        if (attempt === retries - 1) {
-          throw new Error(`Gemini API failed after ${retries} attempts: ${error.message}`);
+        // If no more retries or no more keys available
+        if (attempt >= retries) {
+          throw new Error(`Gemini API failed after ${retries + 1} attempts: ${error.message}`);
         }
 
-        // Wait before retry
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+        throw new Error(`Gemini API error: ${error.message}`);
       }
     }
 
-    throw new Error("Failed to generate text with Gemini");
+    throw new Error("Unexpected error in generateContent");
   }
 }
 
