@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/hooks/use-auth";
-import { Navigation } from "@/components/navigation";
+import Navigation from "@/components/navigation";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import MvpGenerator from "@/pages/mvp-generator";
