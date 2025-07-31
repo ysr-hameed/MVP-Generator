@@ -14,7 +14,7 @@ import { cronJobService } from "./services/cronJobs";
 import { ApiKeyManager } from "./services/apiKeyManager";
 
 const app = express();
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
 // CORS configuration for separate backend hosting
 app.use(cors({
@@ -39,7 +39,7 @@ async function main() {
     serveStatic(app);
   }
 
-  const PORT = Number(process.env.PORT) || 5000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
   server.listen(PORT, "0.0.0.0", () => {
     const mode = process.env.NODE_ENV === "development" ? " (development mode with Vite)" : "";
     console.log(`Server running on port ${PORT}${mode}`);

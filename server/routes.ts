@@ -318,6 +318,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public endpoint for fetching active advertisements
+  app.get("/api/advertisements", async (req, res) => {
+    try {
+      const storage = await getStorage();
+      const ads = await storage.getActiveAdvertisements();
+      res.json(ads);
+    } catch (error) {
+      console.error("Public ads fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch advertisements" });
+    }
+  });
+
+  // Ad settings endpoints
+  app.get("/api/admin/ad-settings", isAuthenticated, async (req, res) => {
+    try {
+      const storage = await getStorage();
+      const settings = await storage.getAdSettings();
+      res.json(settings);
+    } catch (error) {
+      console.error("Ad settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch ad settings" });
+    }
+  });
+
+  app.post("/api/admin/ad-settings", isAuthenticated, async (req, res) => {
+    try {
+      const data = insertAdSettingsSchema.parse(req.body);
+      const storage = await getStorage();
+      const settings = await storage.updateAdSettings(data);
+      res.json(settings);
+    } catch (error) {
+      console.error("Ad settings update error:", error);
+      res.status(400).json({ message: "Invalid ad settings data" });
+    }
+  });
+
+  app.delete("/api/admin/advertisements/:id", isAuthenticated, async (req, res) => {
+    try {
+      const storage = await getStorage();
+      await storage.deleteAdvertisement(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Ad delete error:", error);
+      res.status(500).json({ message: "Failed to delete advertisement" });
+    }
+  });
+
   // Ad settings
   app.get("/api/admin/ad-settings", isAuthenticated, async (req, res) => {
     try {

@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AdDisplay } from "@/components/ad-display";
 import { Search, Calendar, Clock, ArrowRight, TrendingUp } from "lucide-react";
 import { type BlogPost } from "@shared/schema";
 import { useLocation } from 'wouter';
@@ -54,6 +55,9 @@ export default function Blog() {
       />
 
       <div className="pt-16">
+        {/* Header Ads */}
+        <AdDisplay position="header" className="py-4 bg-slate-50" />
+        
         {/* Hero Section */}
         <section className="section-padding bg-gradient-to-br from-primary/5 via-secondary/5 to-accent/5">
           <div className="container-max">
@@ -142,13 +146,18 @@ export default function Blog() {
 
         {/* Blog Posts Grid */}
         <section className="section-padding bg-muted/50">
-          <div className="container-max">
+          <div className="container-max flex gap-8">
+            {/* Main Content */}
+            <div className="flex-1">
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-4">Latest Articles</h2>
               <p className="text-muted-foreground">
                 {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''} found
               </p>
             </div>
+
+            {/* Content Ads */}
+            <AdDisplay position="content" className="mb-8" />
 
             {isLoading ? (
               <div className="grid md:grid-cols-3 gap-8">
@@ -228,8 +237,19 @@ export default function Blog() {
                 </Button>
               </div>
             )}
+            </div>
+
+            {/* Sidebar with Ads */}
+            <div className="w-80 hidden lg:block">
+              <div className="sticky top-20">
+                <AdDisplay position="sidebar" />
+              </div>
+            </div>
           </div>
         </section>
+
+        {/* Footer Ads */}
+        <AdDisplay position="footer" className="py-8 bg-slate-100" />
       </div>
     </>
   );

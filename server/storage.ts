@@ -346,35 +346,65 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAdvertisement(id: string, data: Partial<InsertAdvertisement>): Promise<Advertisement> {
-    const [result] = await this.db
+    const [updated] = await this.db
       .update(advertisements)
       .set({ ...data, updatedAt: new Date() })
       .where(eq(advertisements.id, id))
       .returning();
-    return result;
+
+    if (!updated) {
+      throw new Error("Advertisement not found");
+    }
+
+    return updated;
   }
 
   async deleteAdvertisement(id: string): Promise<void> {
-    await this.db.delete(advertisements).where(eq(advertisements.id, id));
+    await this.db
+      .delete(advertisements)
+      .where(eq(advertisements.id, id));
   }
 
-  async getAdSettings(): Promise<AdSettings | undefined> {
-    const [result] = await this.db.select().from(adSettings).limit(1);
-    return result;
+  async getActiveAdvertisements(): Promise<Advertisement[]> {
+    return await this.db
+      .select()
+      .from(advertisements)
+      .where(eq(advertisements.isActive, true))
+      .orderBy(advertisements.createdAt);
   }
 
-  async updateAdSettings(data: InsertAdSettings): Promise<AdSettings> {
+  async getAdSettings(): Promise<any> {
+    const [settings] = await this.db
+      .select()
+      .from(adSettings)
+      .limit(1);
+
+    return settings || { enableAds: false, adCount: "low" };
+  }
+
+  async updateAdSettings(data: any): Promise<any> {
+    // First try to update existing settings
     const existing = await this.getAdSettings();
-    if (existing) {
-      const [result] = await this.db
+
+    if (existing && existing.id) {
+      const [updated] = await this.db
         .update(adSettings)
         .set({ ...data, updatedAt: new Date() })
         .where(eq(adSettings.id, existing.id))
         .returning();
-      return result;
+      return updated;
     } else {
-      const [result] = await this.db.insert(adSettings).values(data).returning();
-      return result;
+      // Create new settings if none exist
+      const [created] = await this.db
+        .insert(adSettings)
+        .values({
+          id: crypto.randomUUID(),
+          ...data,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .returning();
+      return created;
     }
   }
 
