@@ -1,16 +1,102 @@
-// Unsplash image service for blog content
+
+import { getStorage } from "../storage";
+
+// Unsplash image service for blog content with API key rotation
 export class UnsplashService {
   private static readonly BASE_URL = 'https://api.unsplash.com';
-  private static readonly ACCESS_KEY = process.env.UNSPLASH_ACCESS_KEY || '5Whf8VZKlSygYOSPFwAYaUEFwGBK-ZODFBn1vxguRgA';
+  private static currentKeyIndex = 0;
+  private static accessKeys: string[] = [];
+  
+  // Initialize API keys from database and environment
+  private static async initializeApiKeys() {
+    try {
+      const storage = await getStorage();
+      const keys = await storage.getActiveApiKeys("unsplash");
+      this.accessKeys = keys.map(k => k.key);
+
+      // Fallback to environment variables if no keys in database
+      if (this.accessKeys.length === 0) {
+        const envKeys = [
+          process.env.UNSPLASH_ACCESS_KEY,
+          process.env.UNSPLASH_ACCESS_KEY_2,
+          process.env.UNSPLASH_ACCESS_KEY_3
+        ].filter(Boolean) as string[];
+        
+        this.accessKeys = envKeys;
+      }
+
+      // Use fallback key if no other keys available
+      if (this.accessKeys.length === 0) {
+        this.accessKeys = ['5Whf8VZKlSygYOSPFwAYaUEFwGBK-ZODFBn1vxguRgA'];
+      }
+    } catch (error) {
+      console.error("Failed to initialize Unsplash API keys:", error);
+      // Fallback to environment or default key
+      this.accessKeys = [
+        process.env.UNSPLASH_ACCESS_KEY || '5Whf8VZKlSygYOSPFwAYaUEFwGBK-ZODFBn1vxguRgA'
+      ];
+    }
+  }
+
+  // Rotate to next available API key
+  private static async rotateApiKey() {
+    const startIndex = this.currentKeyIndex;
+    do {
+      this.currentKeyIndex = (this.currentKeyIndex + 1) % this.accessKeys.length;
+      const apiKey = this.accessKeys[this.currentKeyIndex];
+
+      // Check if this key has exceeded daily limits
+      try {
+        const storage = await getStorage();
+        const keyData = await storage.getApiKeyByValue(apiKey);
+        if (keyData && keyData.dailyUsage < 50) { // Assuming 50 requests per day limit
+          return apiKey;
+        }
+      } catch (error) {
+        console.log("Error checking key usage, continuing with rotation");
+      }
+    } while (this.currentKeyIndex !== startIndex);
+
+    // Return current key even if at limit
+    return this.accessKeys[this.currentKeyIndex];
+  }
+
+  // Get current API key with rotation support
+  private static async getCurrentApiKey(): Promise<string> {
+    if (this.accessKeys.length === 0) {
+      await this.initializeApiKeys();
+    }
+    
+    if (this.accessKeys.length === 0) {
+      throw new Error("No Unsplash API keys available");
+    }
+
+    return this.accessKeys[this.currentKeyIndex];
+  }
+
+  // Track API usage
+  private static async trackApiUsage(apiKey: string) {
+    try {
+      const storage = await getStorage();
+      const keyData = await storage.getApiKeyByValue(apiKey);
+      if (keyData) {
+        await storage.incrementApiUsage(keyData.id);
+      }
+    } catch (error) {
+      console.log("Failed to track API usage:", error);
+    }
+  }
   
   // Generate Unsplash image URL with specific parameters using proper API
   static async getImageUrl(searchTerm: string, width: number = 1200, height: number = 600): Promise<string> {
+    let currentKey = await this.getCurrentApiKey();
+    
     try {
       // Clean search term
       const cleanTerm = searchTerm.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '+');
       
       // Use Unsplash API for high-quality, relevant images
-      const response = await fetch(`${this.BASE_URL}/photos/random?query=${cleanTerm}&orientation=landscape&client_id=${this.ACCESS_KEY}`, {
+      const response = await fetch(`${this.BASE_URL}/photos/random?query=${cleanTerm}&orientation=landscape&client_id=${currentKey}`, {
         headers: {
           'Accept': 'application/json',
           'Accept-Version': 'v1'
@@ -20,8 +106,32 @@ export class UnsplashService {
       if (response.ok) {
         const data = await response.json();
         console.log('Unsplash API response:', data);
+        
+        // Track successful API usage
+        await this.trackApiUsage(currentKey);
+        
         // Return the regular image URL with proper dimensions
         return `${data.urls.raw}&w=${width}&h=${height}&fit=crop&crop=entropy&auto=format&q=80`;
+      } else if (response.status === 403 || response.status === 429) {
+        // Rate limit or quota exceeded, try rotating key
+        console.log('Unsplash API rate limit hit, rotating key...');
+        currentKey = await this.rotateApiKey();
+        
+        // Retry with new key
+        const retryResponse = await fetch(`${this.BASE_URL}/photos/random?query=${cleanTerm}&orientation=landscape&client_id=${currentKey}`, {
+          headers: {
+            'Accept': 'application/json',
+            'Accept-Version': 'v1'
+          }
+        });
+        
+        if (retryResponse.ok) {
+          const retryData = await retryResponse.json();
+          await this.trackApiUsage(currentKey);
+          return `${retryData.urls.raw}&w=${width}&h=${height}&fit=crop&crop=entropy&auto=format&q=80`;
+        } else {
+          console.log('Retry failed, using fallback');
+        }
       } else {
         console.log('Unsplash API response not ok:', response.status, response.statusText);
       }
