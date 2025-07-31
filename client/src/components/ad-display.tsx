@@ -24,10 +24,7 @@ interface Advertisement {
 
 function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const adContainerRef = useRef<HTMLDivElement>(null);
-  const [adErrors, setAdErrors] = useState<string[]>([]);
-  const [loadedScripts, setLoadedScripts] = useState<Set<string>>(new Set());
   const [adsLoaded, setAdsLoaded] = useState(false);
-  const processedAdsRef = useRef<Set<string>>(new Set());
 
   // Get ad settings from database
   const { data: adSettings } = useQuery<AdSettings>({
@@ -82,89 +79,71 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const displayAds = (adSettings?.enableAds && positionAds.length > 0) ? 
     positionAds.slice(0, getMaxAdsForPosition()) : [];
 
-  // Enhanced script injection that handles Adsterra and other ad networks properly
-  const injectAdScript = (adCode: string, container: HTMLElement): Promise<void> => {
-    return new Promise((resolve) => {
-      try {
-        // Create a unique container ID
-        const containerId = `ad-container-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        container.id = containerId;
+  // Simple script injection using HTML-like approach with iframes for isolation
+  const injectAdScript = (adCode: string, container: HTMLElement, adId: string): void => {
+    try {
+      // Create iframe for isolated script execution (like HTML)
+      const iframe = document.createElement('iframe');
+      iframe.style.cssText = `
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+        display: block;
+      `;
+      iframe.id = `ad-frame-${adId}`;
 
-        // Clear loading message
-        container.innerHTML = '';
+      container.appendChild(iframe);
 
-        // Check if this is an Adsterra-style script
-        if (adCode.includes('atOptions') || adCode.includes('document.write')) {
-          console.log('Executing Adsterra-style ad script for container:', containerId);
-          
-          // Create content div for the ad
-          const adContentDiv = document.createElement('div');
-          adContentDiv.id = `${containerId}-content`;
-          adContentDiv.style.cssText = 'width: 100%; height: 100%; display: block;';
-          container.appendChild(adContentDiv);
+      // Wait for iframe to load then inject content
+      iframe.onload = () => {
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+          if (iframeDoc) {
+            // Create complete HTML document with the ad code
+            const htmlContent = `
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <meta charset="UTF-8">
+                <style>
+                  body { margin: 0; padding: 8px; overflow: hidden; }
+                  * { box-sizing: border-box; }
+                </style>
+              </head>
+              <body>
+                ${adCode}
+              </body>
+              </html>
+            `;
 
-          // Override document.write temporarily for this container
-          const originalWrite = document.write;
-          const originalWriteln = document.writeln;
-          
-          document.write = function(content: string) {
-            const contentDiv = document.getElementById(`${containerId}-content`);
-            if (contentDiv) {
-              contentDiv.innerHTML += content;
-            }
-          };
-          
-          document.writeln = function(content: string) {
-            const contentDiv = document.getElementById(`${containerId}-content`);
-            if (contentDiv) {
-              contentDiv.innerHTML += content + '\n';
-            }
-          };
+            iframeDoc.open();
+            iframeDoc.write(htmlContent);
+            iframeDoc.close();
 
-          // Execute the ad script using Function constructor (safer than eval)
-          try {
-            console.log('Executing inline ad script:', adCode.substring(0, 100) + '...');
-            
-            // Extract and execute the JavaScript code
-            const executeCode = new Function(adCode);
-            executeCode();
-            
-            // Restore document.write after execution
-            setTimeout(() => {
-              document.write = originalWrite;
-              document.writeln = originalWriteln;
-            }, 1000);
-
-          } catch (error) {
-            console.error('Adsterra script execution error:', error);
-            // Restore document.write on error
-            document.write = originalWrite;
-            document.writeln = originalWriteln;
-            
-            container.innerHTML = `<div style="padding: 20px; text-align: center; color: #666; border: 1px dashed #ccc; border-radius: 4px;">
-              <p>Loading advertisement...</p>
-              <div style="width: 20px; height: 20px; border: 2px solid #e3e3e3; border-top: 2px solid #333; border-radius: 50%; animation: spin 1s linear infinite; margin: 10px auto;"></div>
-            </div>`;
+            console.log(`✓ Ad loaded successfully: ${adId}`);
           }
-        } else {
-          // For regular HTML ads
-          console.log('Executing HTML ad for container:', containerId);
-          container.innerHTML = adCode;
+        } catch (error) {
+          console.error(`Failed to inject ad content for ${adId}:`, error);
+          container.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #999; border: 1px dashed #ddd; border-radius: 4px;">
+              <p>Advertisement space</p>
+            </div>
+          `;
         }
+      };
 
-        // Resolve after allowing time for ad to load
-        setTimeout(() => {
-          resolve();
-        }, 2000);
+      // Set empty src to trigger onload
+      iframe.src = 'about:blank';
 
-      } catch (error) {
-        console.error('Ad injection error:', error);
-        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #999; border: 1px dashed #ddd; border-radius: 4px;">
+    } catch (error) {
+      console.error(`Error creating ad container for ${adId}:`, error);
+      container.innerHTML = `
+        <div style="padding: 20px; text-align: center; color: #999; border: 1px dashed #ddd; border-radius: 4px;">
           <p>Ad failed to load</p>
-        </div>`;
-        resolve();
-      }
-    });
+        </div>
+      `;
+    }
   };
 
   // Main ad loading effect
@@ -174,94 +153,45 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
 
       // Clear previous content
       container.innerHTML = '';
-      setAdErrors([]);
 
-      const loadAds = async () => {
-        for (let i = 0; i < displayAds.length; i++) {
-          const ad = displayAds[i];
-          const adKey = `${ad.id}-${position}`;
+      displayAds.forEach((ad, index) => {
+        try {
+          // Create ad wrapper
+          const adWrapper = document.createElement('div');
+          adWrapper.className = 'ad-wrapper';
+          adWrapper.style.cssText = `
+            width: ${ad.width ? `${ad.width}px` : '100%'};
+            max-width: 100%;
+            height: ${ad.height ? `${ad.height}px` : '250px'};
+            margin: 8px auto;
+            padding: 0;
+            border: 1px solid #e5e5e5;
+            border-radius: 6px;
+            background-color: #fafafa;
+            position: relative;
+            overflow: hidden;
+            display: block;
+          `;
 
-          // Skip if already processed
-          if (processedAdsRef.current.has(adKey)) {
-            continue;
-          }
+          container.appendChild(adWrapper);
 
-          try {
-            // Create ad wrapper
-            const adWrapper = document.createElement('div');
-            adWrapper.className = 'ad-wrapper';
-            adWrapper.style.cssText = `
-              width: ${ad.width ? `${ad.width}px` : '100%'};
-              max-width: 100%;
-              height: ${ad.height ? `${ad.height}px` : 'auto'};
-              min-height: 60px;
-              margin: 8px auto;
-              padding: 8px;
-              border: 1px solid #e5e5e5;
-              border-radius: 6px;
-              background-color: #fafafa;
-              position: relative;
-              overflow: hidden;
-              display: block;
-            `;
+          // Inject the ad with a small delay
+          setTimeout(() => {
+            injectAdScript(ad.adCode, adWrapper, ad.id);
+          }, 100 * index);
 
-            // Add loading indicator with better styling
-            adWrapper.innerHTML = `
-              <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666; font-size: 12px; background: #f8f9fa;">
-                <div style="text-align: center;">
-                  <div style="width: 20px; height: 20px; border: 2px solid #e3e3e3; border-top: 2px solid #333; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 8px;"></div>
-                  Loading ad...
-                </div>
-              </div>
-              <style>
-                @keyframes spin {
-                  0% { transform: rotate(0deg); }
-                  100% { transform: rotate(360deg); }
-                }
-              </style>
-            `;
-
-            container.appendChild(adWrapper);
-
-            // Inject the ad after a short delay
-            setTimeout(async () => {
-              try {
-                await injectAdScript(ad.adCode, adWrapper);
-                processedAdsRef.current.add(adKey);
-                console.log(`Ad loaded successfully: ${ad.name}`);
-                
-                // Remove loading state
-                const loadingDiv = adWrapper.querySelector('div[style*="Loading ad"]');
-                if (loadingDiv) {
-                  loadingDiv.remove();
-                }
-                
-              } catch (error) {
-                console.error(`Failed to load ad ${ad.name}:`, error);
-                adWrapper.innerHTML = `
-                  <div style="display: flex; align-items: center; justify-content: center; height: 60px; color: #999; font-size: 11px; background: #fafafa; border: 1px dashed #ddd; border-radius: 4px;">
-                    <span>Advertisement space</span>
-                  </div>
-                `;
-                setAdErrors(prev => [...prev, `Failed to load: ${ad.name}`]);
-              }
-            }, 200 * i);
-          } catch (error) {
-            console.error(`Error creating ad container for ${ad.name}:`, error);
-          }
+        } catch (error) {
+          console.error(`Error creating ad container for ${ad.name}:`, error);
         }
+      });
 
-        setAdsLoaded(true);
-      };
-
-      loadAds();
+      setAdsLoaded(true);
     }
   }, [displayAds, adsLoaded, position]);
 
   // Reset when ads change
   useEffect(() => {
     setAdsLoaded(false);
-    processedAdsRef.current.clear();
   }, [displayAds.length, displayAds.map(ad => ad.id).join(',')]);
 
   // Cleanup on unmount
@@ -270,7 +200,6 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
       if (adContainerRef.current) {
         adContainerRef.current.innerHTML = '';
       }
-      processedAdsRef.current.clear();
     };
   }, []);
 
@@ -297,15 +226,6 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
         className="space-y-2"
         style={{ minHeight: '60px' }}
       />
-
-      {/* Debug info in development */}
-      {process.env.NODE_ENV === 'development' && adErrors.length > 0 && (
-        <div className="text-xs text-red-500 mt-2">
-          {adErrors.map((error, index) => (
-            <div key={index}>{error}</div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

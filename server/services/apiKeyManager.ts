@@ -124,6 +124,16 @@ export class ApiKeyManager {
     await this.loadApiKeys();
   }
 
+  static async resetDailyUsage() {
+    try {
+      const storage = await getStorage();
+      await storage.resetDailyUsage();
+      console.log("✓ Daily API usage reset completed");
+    } catch (error) {
+      console.error("Failed to reset daily usage:", error);
+    }
+  }
+
   static getKeyStats() {
     return {
       gemini: {

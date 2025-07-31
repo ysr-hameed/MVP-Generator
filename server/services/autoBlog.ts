@@ -138,7 +138,7 @@ CONTENT FORMATTING REQUIREMENTS:
 - Format content for readability with proper paragraphs and spacing`;
 
     try {
-      const response = await geminiService.generateContent(prompt);
+      const response = await geminiService.generateText(prompt);
 
       // Clean and parse the JSON response
       const cleanedResponse = response.replace(/```json\s*|\s*```/g, '').trim();

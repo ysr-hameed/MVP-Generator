@@ -265,12 +265,21 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getActiveApiKeys(provider: string): Promise<ApiKey[]> {
-    return await this.db
-      .select()
-      .from(apiKeys)
-      .where(and(eq(apiKeys.provider, provider), eq(apiKeys.isActive, true)))
-      .orderBy(apiKeys.dailyUsage); // Rotate to least used
+  async getActiveApiKeys(provider: string) {
+    return await this.db.select().from(apiKeys)
+      .where(and(
+        eq(apiKeys.provider, provider),
+        eq(apiKeys.isActive, true)
+      ));
+  }
+
+  async resetDailyUsage() {
+    await this.db.update(apiKeys)
+      .set({ 
+        dailyUsage: 0, 
+        lastReset: new Date()
+      })
+      .execute();
   }
 
   async getAllApiKeys(provider: string): Promise<ApiKey[]> {
@@ -328,13 +337,6 @@ export class DatabaseStorage implements IStorage {
         dailyUsage: sql`${apiKeys.dailyUsage} + 1`
       })
       .where(eq(apiKeys.id, id));
-  }
-
-  async resetDailyUsage(): Promise<void> {
-    await this.db.update(apiKeys).set({ 
-      dailyUsage: 0, 
-      lastReset: new Date() 
-    });
   }
 
   // Advertisement operations
