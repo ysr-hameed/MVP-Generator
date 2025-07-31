@@ -99,9 +99,12 @@ export default function Blog() {
                     <div className="grid md:grid-cols-2 gap-0">
                       <div className="relative">
                         <img 
-                          src={featuredPost.imageUrl || "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=400"} 
+                          src={featuredPost.imageUrl || "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80"} 
                           alt={featuredPost.title}
                           className="w-full h-64 md:h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80";
+                          }}
                         />
                         <Badge className="absolute top-4 left-4 gradient-primary text-white">
                           Featured
@@ -183,9 +186,12 @@ export default function Blog() {
                   <Card key={post.id} className="blog-card cursor-pointer" onClick={() => handleReadMore(post.slug)}>
                     <div className="relative">
                       <img 
-                        src={post.imageUrl || "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&h=400"} 
+                        src={post.imageUrl || "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80"} 
                         alt={post.title}
                         className="w-full h-48 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/1200x600/?startup+business&auto=format&fit=crop&q=80";
+                        }}
                       />
                     </div>
                     <CardContent className="p-6">

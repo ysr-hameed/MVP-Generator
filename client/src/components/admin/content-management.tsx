@@ -18,7 +18,9 @@ import {
   Trash2, 
   Eye,
   Calendar,
-  Loader2
+  Loader2,
+  Save,
+  X
 } from "lucide-react";
 
 export function ContentManagement() {
@@ -51,7 +53,7 @@ export function ContentManagement() {
 
   const createPostMutation = useMutation({
     mutationFn: async (data: InsertBlogPost) => {
-      const response = await apiRequest("POST", "/api/admin/blog/posts", data);
+      const response = await apiRequest("POST", "/api/admin/blog", data);
       return response.json();
     },
     onSuccess: () => {
@@ -73,8 +75,8 @@ export function ContentManagement() {
   });
 
   const updatePostMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<InsertBlogPost> }) => {
-      const response = await apiRequest("PUT", `/api/admin/blog/posts/${id}`, data);
+    mutationFn: async (data: { id: string; updates: Partial<InsertBlogPost> }) => {
+      const response = await apiRequest("PUT", `/api/admin/blog/${data.id}`, data.updates);
       return response.json();
     },
     onSuccess: () => {
@@ -85,6 +87,8 @@ export function ContentManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/blog/posts"] });
       setIsEditing(false);
       setSelectedPost(null);
+      setShowForm(false);
+      form.reset();
     },
     onError: (error: any) => {
       toast({
@@ -97,7 +101,7 @@ export function ContentManagement() {
 
   const deletePostMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await apiRequest("DELETE", `/api/admin/blog/posts/${id}`, {});
+      const response = await apiRequest("DELETE", `/api/admin/blog/${id}`);
       return response.json();
     },
     onSuccess: () => {
@@ -106,6 +110,7 @@ export function ContentManagement() {
         description: "Blog post has been deleted successfully.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/blog/posts"] });
+      setSelectedPost(null);
     },
     onError: (error: any) => {
       toast({
@@ -116,8 +121,18 @@ export function ContentManagement() {
     },
   });
 
+  const onSubmit = (data: InsertBlogPost) => {
+    if (isEditing && selectedPost) {
+      updatePostMutation.mutate({ id: selectedPost.id, updates: data });
+    } else {
+      createPostMutation.mutate(data);
+    }
+  };
+
   const handleEdit = (post: BlogPost) => {
     setSelectedPost(post);
+    setIsEditing(true);
+    setShowForm(true);
     form.reset({
       title: post.title,
       slug: post.slug,
@@ -130,93 +145,82 @@ export function ContentManagement() {
       keywords: post.keywords || [],
       imageUrl: post.imageUrl || "",
     });
-    setIsEditing(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this post?")) {
-      deletePostMutation.mutate(id);
+  const handleDelete = (post: BlogPost) => {
+    if (confirm(`Are you sure you want to delete "${post.title}"? This action cannot be undone.`)) {
+      deletePostMutation.mutate(post.id);
     }
   };
 
-  const onSubmit = (data: InsertBlogPost) => {
-    if (isEditing && selectedPost) {
-      updatePostMutation.mutate({ id: selectedPost.id, data });
-    } else {
-      createPostMutation.mutate(data);
-    }
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setSelectedPost(null);
+    setShowForm(false);
+    form.reset();
   };
 
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
+  const formatDate = (date: Date | string) => {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-white">Content Management</h2>
-        <Button
-          onClick={() => {
-            setShowForm(!showForm);
-            setIsEditing(false);
-            setSelectedPost(null);
-            form.reset();
+      <div className="flex justify-between items-center">
+        <h2 className="text-3xl font-bold">Blog Management</h2>
+        <Button 
+          onClick={() => { 
+            setShowForm(!showForm); 
+            setIsEditing(false); 
+            setSelectedPost(null); 
+            form.reset(); 
           }}
           className="bg-primary hover:bg-primary/90"
         >
           <Plus className="w-4 h-4 mr-2" />
-          New Post
+          Add New Post
         </Button>
       </div>
 
-      {/* Blog Post Form */}
-      {(showForm || isEditing) && (
-        <Card className="bg-slate-800 border-slate-700">
+      {/* Form for creating/editing posts */}
+      {showForm && (
+        <Card>
           <CardHeader>
-            <CardTitle className="text-white">
+            <CardTitle className="flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
               {isEditing ? "Edit Blog Post" : "Create New Blog Post"}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="title"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-300">Title</FormLabel>
+                        <FormLabel>Title</FormLabel>
                         <FormControl>
-                          <Input 
-                            {...field} 
-                            className="bg-slate-700 border-slate-600 text-white"
-                            onChange={(e) => {
-                              field.onChange(e);
-                              if (!isEditing) {
-                                form.setValue("slug", generateSlug(e.target.value));
-                              }
-                            }}
-                          />
+                          <Input {...field} placeholder="Enter post title" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="slug"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-300">Slug</FormLabel>
+                        <FormLabel>Slug</FormLabel>
                         <FormControl>
-                          <Input {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          <Input {...field} placeholder="post-slug" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -229,14 +233,9 @@ export function ContentManagement() {
                   name="excerpt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Excerpt</FormLabel>
+                      <FormLabel>Excerpt</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          {...field} 
-                          value={field.value || ""}
-                          rows={3}
-                          className="bg-slate-700 border-slate-600 text-white resize-none"
-                        />
+                        <Textarea {...field} placeholder="Brief description of the post" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -248,42 +247,37 @@ export function ContentManagement() {
                   name="content"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-slate-300">Content</FormLabel>
+                      <FormLabel>Content</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          {...field} 
-                          rows={10}
-                          className="bg-slate-700 border-slate-600 text-white resize-none"
-                        />
+                        <Textarea {...field} rows={10} placeholder="Write your post content here" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="author"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-300">Author</FormLabel>
+                        <FormLabel>Author</FormLabel>
                         <FormControl>
-                          <Input {...field} className="bg-slate-700 border-slate-600 text-white" />
+                          <Input {...field} placeholder="Author name" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-
                   <FormField
                     control={form.control}
                     name="imageUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-slate-300">Image URL</FormLabel>
+                        <FormLabel>Image URL</FormLabel>
                         <FormControl>
-                          <Input {...field} value={field.value || ""} className="bg-slate-700 border-slate-600 text-white" />
+                          <Input {...field} placeholder="https://example.com/image.jpg" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -291,37 +285,21 @@ export function ContentManagement() {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      type="submit"
-                      className="bg-primary hover:bg-primary/90"
-                      disabled={createPostMutation.isPending || updatePostMutation.isPending}
-                    >
-                      {(createPostMutation.isPending || updatePostMutation.isPending) ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          {isEditing ? "Updating..." : "Creating..."}
-                        </>
-                      ) : (
-                        isEditing ? "Update Post" : "Create Post"
-                      )}
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        setShowForm(false);
-                        setIsEditing(false);
-                        setSelectedPost(null);
-                        form.reset();
-                      }}
-                      className="text-slate-300 hover:text-white"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                    <X className="w-4 h-4 mr-2" />
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createPostMutation.isPending || updatePostMutation.isPending}
+                  >
+                    {(createPostMutation.isPending || updatePostMutation.isPending) && 
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    }
+                    <Save className="w-4 h-4 mr-2" />
+                    {isEditing ? "Update Post" : "Create Post"}
+                  </Button>
                 </div>
               </form>
             </Form>
@@ -329,63 +307,73 @@ export function ContentManagement() {
         </Card>
       )}
 
-      {/* Blog Posts List */}
-      <Card className="bg-slate-800 border-slate-700">
+      {/* Posts list */}
+      <Card>
         <CardHeader>
-          <CardTitle className="text-white flex items-center">
+          <CardTitle className="flex items-center">
             <FileText className="w-5 h-5 mr-2" />
             Blog Posts ({posts.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="loading-spinner mx-auto"></div>
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin" />
+              <span className="ml-2">Loading posts...</span>
+            </div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-400">No blog posts yet. Create your first post!</p>
+            <div className="text-center py-8 text-muted-foreground">
+              No blog posts found. Create your first post to get started.
             </div>
           ) : (
             <div className="space-y-4">
               {posts.map((post) => (
-                <div key={post.id} className="p-4 bg-slate-700 rounded-lg">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <h3 className="text-lg font-semibold text-white">{post.title}</h3>
-                        {post.featured && (
-                          <Badge className="bg-primary text-white">Featured</Badge>
-                        )}
-                      </div>
-                      <p className="text-slate-300 text-sm mb-2">{post.excerpt}</p>
-                      <div className="flex items-center space-x-4 text-xs text-slate-400">
-                        <span className="flex items-center">
-                          <Calendar className="w-3 h-3 mr-1" />
-                          {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : 'Draft'}
-                        </span>
-                        <span>By {post.author}</span>
-                        <span>{post.slug}</span>
-                      </div>
+                <div key={post.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="font-semibold text-lg">{post.title}</h3>
+                      {post.featured && <Badge variant="secondary">Featured</Badge>}
                     </div>
-                    <div className="flex items-center space-x-2 ml-4">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleEdit(post)}
-                        className="text-slate-300 hover:text-white"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleDelete(post.id)}
-                        className="text-slate-300 hover:text-red-400"
-                        disabled={deletePostMutation.isPending}
-                      >
+                    <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <div className="flex items-center">
+                        <Calendar className="w-3 h-3 mr-1" />
+                        {formatDate(post.publishedAt!)}
+                      </div>
+                      <span>By {post.author}</span>
+                      <span>{post.slug}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/blog/${post.slug}`, '_blank')}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(post)}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(post)}
+                      disabled={deletePostMutation.isPending}
+                    >
+                      {deletePostMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
                         <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+                      )}
+                    </Button>
                   </div>
                 </div>
               ))}

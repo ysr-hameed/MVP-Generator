@@ -25,12 +25,19 @@ export function generateFallbackMvp(idea: string, industry: string, targetAudien
       payment: "Stripe Billing",
       hosting: "AWS or Google Cloud"
     },
-    "default": {
-      frontend: "React or Vue.js",
+    "Health & Fitness": {
+      frontend: "React Native for mobile app",
       backend: "Node.js with Express",
-      database: "PostgreSQL or MongoDB",
+      database: "PostgreSQL",
+      payment: "Stripe for subscriptions",
+      hosting: "AWS or Digital Ocean"
+    },
+    "default": {
+      frontend: "React with TypeScript",
+      backend: "Node.js with Express",
+      database: "PostgreSQL",
       payment: "Stripe",
-      hosting: "Vercel or Netlify"
+      hosting: "Vercel or Railway"
     }
   };
 
@@ -48,14 +55,41 @@ export function generateFallbackMvp(idea: string, industry: string, targetAudien
     high: { development: "$35,000 - $75,000", monthly: "$1,500 - $5,000" }
   };
 
-  return {
-    coreFeatures: [
-      "User registration and authentication",
-      "Core functionality based on your idea",
-      "Basic user interface and experience",
-      "Payment processing (if applicable)",
-      "Admin dashboard for management"
+  const industryFeatures = {
+    "Health & Fitness": [
+      "User profile with health metrics tracking",
+      "Workout planning and scheduling system", 
+      "Progress tracking with charts and analytics",
+      "AI-powered personalized recommendations",
+      "Social features for community engagement",
+      "Integration with wearable devices",
+      "Video content library for exercises",
+      "Goal setting and achievement system"
     ],
+    "E-commerce": [
+      "Product catalog with search and filters",
+      "Shopping cart and checkout system",
+      "User accounts and order history",
+      "Payment processing integration",
+      "Inventory management dashboard",
+      "Customer review and rating system",
+      "Email notifications and order tracking"
+    ],
+    "default": [
+      "User registration and authentication system",
+      "Core functionality tailored to your business idea",
+      "Intuitive user dashboard and interface",
+      "Mobile-responsive design for all devices",
+      "Basic analytics and user behavior tracking",
+      "Search and filtering capabilities",
+      "Admin panel for content management"
+    ]
+  };
+
+  const features = industryFeatures[industry] || industryFeatures.default;
+
+  return {
+    coreFeatures: features,
     techStack: selectedTech,
     monetizationStrategy: `For ${industry.toLowerCase()}, consider: subscription model for recurring revenue, transaction fees if marketplace, freemium model to attract users, and premium features for advanced functionality.`,
     timeline: timelines[budgetAmount],
