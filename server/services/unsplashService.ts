@@ -97,11 +97,26 @@ export class UnsplashService {
 
     while (retryCount < maxRetries) {
       try {
-        // Clean search term
-        const cleanTerm = searchTerm.toLowerCase()
+        // Clean and simplify search term - use only single word keywords
+        let cleanTerm = searchTerm.toLowerCase()
           .replace(/[^a-z0-9\s]/g, '')
-          .replace(/\s+/g, '+')
-          .substring(0, 50); // Limit length
+          .split(' ')[0] // Take only first word
+          .substring(0, 20); // Limit length
+        
+        // Map complex terms to simple ones
+        const termMapping = {
+          'validate': 'planning',
+          'startup': 'business',
+          'development': 'coding',
+          'teamwork': 'office',
+          'marketing': 'advertising',
+          'finance': 'money',
+          'technology': 'computer',
+          'budgetfriendly': 'budget',
+          'maximum': 'growth'
+        };
+        
+        cleanTerm = termMapping[cleanTerm] || cleanTerm;
 
         console.log(`Fetching Unsplash image for: ${cleanTerm}`);
 

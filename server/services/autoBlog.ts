@@ -235,8 +235,10 @@ CONTENT FORMATTING REQUIREMENTS:
     const searchTerms = this.extractSearchTerms(topic);
 
     try {
+      // Use simple, common keywords for better image results
+      const simpleKeywords = ['business', 'office', 'computer', 'meeting', 'teamwork'];
       for (let i = 0; i < 3; i++) {
-        const term = searchTerms[i] || `business ${i + 1}`;
+        const term = simpleKeywords[i] || 'business';
         const image = await UnsplashService.getImageUrl(term, 800, 400);
         sectionImages.push(image);
       }

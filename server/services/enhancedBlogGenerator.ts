@@ -74,38 +74,33 @@ export class EnhancedBlogGenerator {
 
     if (useUnsplashImages) {
       try {
-        // Extract meaningful keywords from title
-        const stopWords = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'how', 'what', 'why', 'when', 'where', 'which', 'that', 'this', 'these', 'those', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'can', 'may', 'might', 'must'];
-
-        const titleWords = selectedTopic.toLowerCase()
-          .replace(/[^\w\s]/g, ' ')
-          .split(' ')
-          .filter(word => word.length > 2 && !stopWords.includes(word))
-          .slice(0, 3);
-
-        // Add topic-based keywords
-        const topicKeywords = [];
-        if (selectedTopic.toLowerCase().includes('business') || selectedTopic.toLowerCase().includes('startup')) {
-          topicKeywords.push('business');
+        // Use simple, generic keywords for better image results
+        let imageKeywords = 'business';
+        
+        // Map complex topics to simple keywords
+        if (selectedTopic.toLowerCase().includes('startup') || selectedTopic.toLowerCase().includes('business')) {
+          imageKeywords = 'startup';
+        } else if (selectedTopic.toLowerCase().includes('tech') || selectedTopic.toLowerCase().includes('software') || selectedTopic.toLowerCase().includes('ai')) {
+          imageKeywords = 'technology';
+        } else if (selectedTopic.toLowerCase().includes('money') || selectedTopic.toLowerCase().includes('budget') || selectedTopic.toLowerCase().includes('finance')) {
+          imageKeywords = 'finance';
+        } else if (selectedTopic.toLowerCase().includes('marketing') || selectedTopic.toLowerCase().includes('user')) {
+          imageKeywords = 'marketing';
+        } else if (selectedTopic.toLowerCase().includes('development') || selectedTopic.toLowerCase().includes('mvp')) {
+          imageKeywords = 'development';
+        } else if (selectedTopic.toLowerCase().includes('team') || selectedTopic.toLowerCase().includes('remote')) {
+          imageKeywords = 'teamwork';
+        } else if (selectedTopic.toLowerCase().includes('validate') || selectedTopic.toLowerCase().includes('idea')) {
+          imageKeywords = 'planning';
         }
-        if (selectedTopic.toLowerCase().includes('tech') || selectedTopic.toLowerCase().includes('software')) {
-          topicKeywords.push('technology');
-        }
-        if (selectedTopic.toLowerCase().includes('money') || selectedTopic.toLowerCase().includes('finance')) {
-          topicKeywords.push('finance');
-        }
-        if (selectedTopic.toLowerCase().includes('marketing')) {
-          topicKeywords.push('marketing');
-        }
-
-        const imageKeywords = [...titleWords, ...topicKeywords].slice(0, 2).join(' ') || 'business technology';
 
         console.log(`Generating image for keywords: "${imageKeywords}"`);
         featuredImageUrl = await UnsplashService.getImageUrl(imageKeywords, 1200, 600);
 
-        // Generate additional images for content sections
-        for (let i = 1; i < Math.min(imageKeywords.split(' ').length, 4); i++) {
-          const contentImage = await UnsplashService.getImageUrl(imageKeywords.split(' ')[i], 800, 400);
+        // Generate additional images with simple, generic keywords
+        const sectionKeywords = ['office', 'computer', 'meeting'];
+        for (let i = 0; i < 3; i++) {
+          const contentImage = await UnsplashService.getImageUrl(sectionKeywords[i], 800, 400);
           contentImages.push(contentImage);
         }
       } catch (error) {
