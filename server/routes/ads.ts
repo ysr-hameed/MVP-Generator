@@ -53,23 +53,34 @@ router.get("/api/advertisements", async (req, res) => {
         name: "Header Ad",
         position: "header",
         isActive: true,
-        adCode: `<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; color: white; border-radius: 8px; margin: 10px 0;">
-          <h3 style="margin: 0; font-size: 18px;">🚀 Start Your MVP Today</h3>
-          <p style="margin: 5px 0 0; opacity: 0.9;">Professional development services available</p>
-        </div>`,
-        width: 728,
-        height: 90
+        adCode: `<script type="text/javascript">
+	atOptions = {
+		'key' : '55520cbc4a650e9153cfafbd7c723bc8',
+		'format' : 'iframe',
+		'height' : 50,
+		'width' : 320,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
+</script>`,
+        width: 320,
+        height: 50
       },
       {
         id: "sample-sidebar-1",
         name: "Sidebar Ad 1",
         position: "sidebar",
         isActive: true,
-        adCode: `<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 15px; text-align: center; color: white; border-radius: 8px; margin: 10px 0; min-height: 200px; display: flex; flex-direction: column; justify-content: center;">
-          <h4 style="margin: 0; font-size: 16px;">💡 Need Help?</h4>
-          <p style="margin: 10px 0; font-size: 14px;">Get professional startup consulting</p>
-          <a href="#" style="color: white; text-decoration: underline;">Learn More</a>
-        </div>`,
+        adCode: `<script type="text/javascript">
+	atOptions = {
+		'key' : '9a3ef597fec948bcaa967a2b31ad6309',
+		'format' : 'iframe',
+		'height' : 250,
+		'width' : 300,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
+</script>`,
         width: 300,
         height: 250
       },
@@ -91,11 +102,16 @@ router.get("/api/advertisements", async (req, res) => {
         name: "Content Ad",
         position: "content",
         isActive: true,
-        adCode: `<div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); padding: 20px; text-align: center; color: white; border-radius: 8px; margin: 15px 0;">
-          <h3 style="margin: 0; font-size: 18px;">📊 Analytics & Insights</h3>
-          <p style="margin: 10px 0; opacity: 0.9;">Track your startup's performance with professional tools</p>
-          <a href="#" style="color: white; text-decoration: underline; font-weight: bold;">Get Started Free</a>
-        </div>`,
+        adCode: `<script type="text/javascript">
+	atOptions = {
+		'key' : '55520cbc4a650e9153cfafbd7c723bc8',
+		'format' : 'iframe',
+		'height' : 90,
+		'width' : 728,
+		'params' : {}
+	};
+	document.write('<scr' + 'ipt type="text/javascript" src="//www.highperformanceformat.com/' + atOptions.key + '/invoke.js"></scr' + 'ipt>');
+</script>`,
         width: 728,
         height: 90
       },
