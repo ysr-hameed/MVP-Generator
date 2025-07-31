@@ -74,24 +74,34 @@ export class EnhancedBlogGenerator {
 
     if (useUnsplashImages) {
       try {
-        // Use simple, generic keywords for better image results
+        // Use simple, high-success keywords for better image results
         let imageKeywords = 'business';
         
-        // Map complex topics to simple keywords
-        if (selectedTopic.toLowerCase().includes('startup') || selectedTopic.toLowerCase().includes('business')) {
+        // Enhanced keyword mapping with better fallbacks
+        const topicLower = selectedTopic.toLowerCase();
+        if (topicLower.includes('startup') || topicLower.includes('entrepreneur')) {
           imageKeywords = 'startup';
-        } else if (selectedTopic.toLowerCase().includes('tech') || selectedTopic.toLowerCase().includes('software') || selectedTopic.toLowerCase().includes('ai')) {
+        } else if (topicLower.includes('ai') || topicLower.includes('artificial')) {
+          imageKeywords = 'computer';
+        } else if (topicLower.includes('tech') || topicLower.includes('software') || topicLower.includes('development')) {
           imageKeywords = 'technology';
-        } else if (selectedTopic.toLowerCase().includes('money') || selectedTopic.toLowerCase().includes('budget') || selectedTopic.toLowerCase().includes('finance')) {
+        } else if (topicLower.includes('money') || topicLower.includes('budget') || topicLower.includes('finance') || topicLower.includes('funding')) {
           imageKeywords = 'finance';
-        } else if (selectedTopic.toLowerCase().includes('marketing') || selectedTopic.toLowerCase().includes('user')) {
+        } else if (topicLower.includes('marketing') || topicLower.includes('user') || topicLower.includes('customer')) {
           imageKeywords = 'marketing';
-        } else if (selectedTopic.toLowerCase().includes('development') || selectedTopic.toLowerCase().includes('mvp')) {
-          imageKeywords = 'development';
-        } else if (selectedTopic.toLowerCase().includes('team') || selectedTopic.toLowerCase().includes('remote')) {
+        } else if (topicLower.includes('mvp') || topicLower.includes('product')) {
+          imageKeywords = 'office';
+        } else if (topicLower.includes('team') || topicLower.includes('remote') || topicLower.includes('collaboration')) {
           imageKeywords = 'teamwork';
-        } else if (selectedTopic.toLowerCase().includes('validate') || selectedTopic.toLowerCase().includes('idea')) {
+        } else if (topicLower.includes('validate') || topicLower.includes('idea') || topicLower.includes('planning')) {
           imageKeywords = 'planning';
+        } else if (topicLower.includes('no-code') || topicLower.includes('nocode')) {
+          imageKeywords = 'computer';
+        } else if (topicLower.includes('guide') || topicLower.includes('complete')) {
+          imageKeywords = 'business';
+        } else {
+          // For any unmatched topics, use safe fallback
+          imageKeywords = 'business';
         }
 
         console.log(`Generating image for keywords: "${imageKeywords}"`);

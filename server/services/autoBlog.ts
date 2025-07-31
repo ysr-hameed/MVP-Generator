@@ -144,12 +144,24 @@ CONTENT FORMATTING REQUIREMENTS:
       const cleanedResponse = response.replace(/```json\s*|\s*```/g, '').trim();
       const content = JSON.parse(cleanedResponse);
 
-      // Add Unsplash images to content using API
+      // Add Unsplash images to content using API with better keyword extraction
       try {
-        content.imageUrl = await UnsplashService.getHighQualityImage(topic, 1200, 600);
+        // Extract simple keyword from complex topics
+        let imageKeyword = 'business';
+        const topicLower = topic.toLowerCase();
+        
+        if (topicLower.includes('startup')) imageKeyword = 'startup';
+        else if (topicLower.includes('ai') || topicLower.includes('artificial')) imageKeyword = 'computer';
+        else if (topicLower.includes('tech') || topicLower.includes('development')) imageKeyword = 'technology';
+        else if (topicLower.includes('money') || topicLower.includes('budget')) imageKeyword = 'finance';
+        else if (topicLower.includes('team') || topicLower.includes('remote')) imageKeyword = 'teamwork';
+        else if (topicLower.includes('mvp') || topicLower.includes('product')) imageKeyword = 'office';
+        
+        content.imageUrl = await UnsplashService.getImageUrl(imageKeyword, 1200, 600);
       } catch (error) {
         console.log('Failed to get high quality image, using fallback');
-        content.imageUrl = UnsplashService.getHeroImage(topic);
+        // Use a guaranteed working fallback image
+        content.imageUrl = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=600&fit=crop&crop=entropy&auto=format&q=80";
       }
 
       content.content = await this.enhanceContentWithImages(content.content, topic);
