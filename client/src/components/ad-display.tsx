@@ -2,16 +2,39 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+// Extend window interface for AdSense
+declare global {
+  interface Window {
+    adsbygoogle?: any[];
+  }
+}
+
 interface AdDisplayProps {
   position: "header" | "sidebar" | "content" | "footer" | "blog-top" | "blog-middle" | "blog-bottom" | "generator-top" | "generator-bottom";
   className?: string;
+}
+
+interface AdSettings {
+  enableAds: boolean;
+  adCount: 'low' | 'medium' | 'high';
+  showAdLabels: boolean;
+}
+
+interface Advertisement {
+  id: string;
+  name: string;
+  position: string;
+  isActive: boolean;
+  adCode: string;
+  width?: number;
+  height?: number;
 }
 
 function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const [mountedAds, setMountedAds] = useState<Set<string>>(new Set());
 
   // Get ad settings from database
-  const { data: adSettings } = useQuery({
+  const { data: adSettings } = useQuery<AdSettings>({
     queryKey: ["/api/admin/ad-settings"],
     refetchInterval: 30000, // Check every 30 seconds
     retry: false,
@@ -19,7 +42,7 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   });
 
   // Get advertisements from database
-  const { data: ads = [] } = useQuery({
+  const { data: ads = [] } = useQuery<Advertisement[]>({
     queryKey: ["/api/advertisements"],
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
     enabled: true, // Always try to fetch ads
@@ -28,7 +51,7 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   });
 
   // Filter ads for this position that are active and have ad code
-  const positionAds = ads.filter((ad: any) => 
+  const positionAds = ads.filter((ad: Advertisement) => 
     ad.position === position && 
     ad.isActive && 
     ad.adCode && 
@@ -56,7 +79,8 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
         "generator-top": 1, "generator-bottom": 2
       }
     };
-    return counts[adSettings?.adCount || 'low'][position] || 1;
+    const adCountLevel = adSettings?.adCount || 'low';
+    return counts[adCountLevel][position as keyof typeof counts.low] || 1;
   };
 
   const limitedAds = (adSettings?.enableAds && positionAds.length > 0) ? 
@@ -76,7 +100,7 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
         
         try {
           // Mark as mounted immediately to prevent duplicate execution
-          setMountedAds(prev => new Set([...prev, `${ad.id}-${index}`]));
+          setMountedAds(prev => new Set([...Array.from(prev), `${ad.id}-${index}`]));
 
           if (ad.adCode && ad.adCode.trim()) {
             console.log('Ad code found for:', ad.name);
@@ -208,32 +232,34 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
 // Helper component for responsive ad placement
 export function ResponsiveAdDisplay({ position, className = "" }: AdDisplayProps) {
   return (
-    <div className={`responsive-ad-wrapper ${className}`}>
-      <style jsx>{`
-        .responsive-ad-wrapper {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          margin: 1rem 0;
-        }
-
-        @media (max-width: 768px) {
+    <div className={`responsive-ad-wrapper flex justify-center items-center my-4 ${className}`}>
+      <style dangerouslySetInnerHTML={{
+        __html: `
           .responsive-ad-wrapper {
-            margin: 0.5rem 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 1rem 0;
           }
 
-          .responsive-ad-wrapper .ad-wrapper {
-            transform: scale(0.9);
-            transform-origin: center;
-          }
-        }
+          @media (max-width: 768px) {
+            .responsive-ad-wrapper {
+              margin: 0.5rem 0;
+            }
 
-        @media (max-width: 480px) {
-          .responsive-ad-wrapper .ad-wrapper {
-            transform: scale(0.8);
+            .responsive-ad-wrapper .ad-wrapper {
+              transform: scale(0.9);
+              transform-origin: center;
+            }
           }
-        }
-      `}</style>
+
+          @media (max-width: 480px) {
+            .responsive-ad-wrapper .ad-wrapper {
+              transform: scale(0.8);
+            }
+          }
+        `
+      }} />
       <AdDisplay position={position} />
     </div>
   );
@@ -247,6 +273,9 @@ export function BlogAdDisplay({ position }: { position: "blog-top" | "blog-middl
     </div>
   );
 }
+
+// Named export for the main component
+export { AdDisplay };
 
 // Default export for the main component
 export default AdDisplay;
