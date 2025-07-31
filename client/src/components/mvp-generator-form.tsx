@@ -13,6 +13,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { mvpGeneratorSchema, type MvpGeneratorData } from "@shared/schema";
 import { Lightbulb, Loader2, ArrowRight, Sparkles, Target, DollarSign, Calendar } from "lucide-react";
 import { EnhancedMvpResults } from "@/components/enhanced-mvp-results";
+import { AdDisplay } from "@/components/ad-display";
 
 interface MvpPlan {
   coreFeatures: string[];
@@ -233,6 +234,9 @@ export function MvpGeneratorForm() {
               </div>
             </div>
 
+            {/* Generator Bottom Ads */}
+            <AdDisplay position="generator-bottom" className="my-8" />
+
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
               <Button 
@@ -267,6 +271,9 @@ export function MvpGeneratorForm() {
         </p>
       </CardHeader>
       <CardContent>
+        {/* Generator Top Ads */}
+        <AdDisplay position="generator-top" className="mb-8" />
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <FormField

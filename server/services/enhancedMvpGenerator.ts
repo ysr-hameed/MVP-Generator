@@ -99,14 +99,31 @@ export class EnhancedMvpGenerator {
     const currentTrends = this.getCurrentTechTrends();
 
     const enhancedPrompt = `
-You are an expert startup advisor and technical architect. Generate a comprehensive, actionable MVP plan for ${currentYear} with the latest technology trends and market insights.
+You are an expert startup advisor and technical architect with deep knowledge of successful startups and emerging technologies. Generate the MOST COMPREHENSIVE, INNOVATIVE and BEST-IN-CLASS MVP plan for ${currentYear}.
 
 **SPECIFIC STARTUP IDEA TO ANALYZE:** "${idea}"
 **INDUSTRY CONTEXT:** ${industry || "Technology/Software"}
 **TARGET AUDIENCE:** ${targetAudience || "General consumers and businesses"}
 **BUDGET CONSTRAINT:** ${budget || "Flexible budget"}
 
-IMPORTANT: Base ALL recommendations specifically on the idea "${idea}". Do not provide generic startup advice. Analyze this specific business concept and provide tailored recommendations.
+CRITICAL INSTRUCTIONS:
+- Create the BEST POSSIBLE plan with maximum innovation and earning potential
+- Focus on UNIQUE features that competitors don't have
+- Include MULTIPLE creative earning strategies (at least 5-7 different revenue streams)
+- Think outside the box and suggest cutting-edge solutions
+- Include growth hacking strategies and viral mechanisms
+- Focus on scalability and long-term value creation
+- Base ALL recommendations specifically on "${idea}" - analyze this exact business concept
+
+EMERGING BUSINESS MODELS TO CONSIDER:
+- AI-as-a-Service (AIaaS) integration
+- Community-driven marketplaces
+- Subscription + usage-based hybrid models
+- Creator economy integrations
+- Web3 and tokenization opportunities
+- Micro-SaaS and vertical specialization
+- Data monetization strategies
+- API marketplace creation
 
 **Current Tech Trends (${currentYear}):** ${currentTrends}
 
