@@ -51,8 +51,8 @@ export default function Navigation() {
             {/* Logo */}
             <Link href="/" data-testid="link-home-logo">
               <div className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <Sparkles className="w-6 h-6 text-blue-400" />
-                <span className="text-xl font-bold gradient-text">
+                <Sparkles className="w-6 h-6 text-primary" />
+                <span className="text-xl font-bold logo-text">
                   {siteName}
                 </span>
               </div>
@@ -99,8 +99,8 @@ export default function Navigation() {
           {/* Sidebar Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center gap-3">
-              <Sparkles className="w-6 h-6 text-blue-400" />
-              <span className="text-lg font-semibold gradient-text">
+              <Sparkles className="w-6 h-6 text-primary" />
+              <span className="text-lg font-semibold logo-text">
                 {siteName}
               </span>
             </div>
