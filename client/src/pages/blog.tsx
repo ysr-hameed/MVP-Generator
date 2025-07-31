@@ -8,7 +8,7 @@ import { Search, Calendar, Clock, ArrowRight, TrendingUp } from "lucide-react";
 import { type BlogPost } from "@shared/schema";
 import { useLocation } from 'wouter';
 import SEOHead from "@/components/seo-head";
-import { AdDisplay } from "@/components/ad-display";
+import AdDisplay from "@/components/ad-display";
 
 export default function Blog() {
   const [searchTerm, setSearchTerm] = useState("");

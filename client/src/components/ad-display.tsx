@@ -6,19 +6,19 @@ interface AdDisplayProps {
   className?: string;
 }
 
-export function AdDisplay({ position, className = "" }: AdDisplayProps) {
+function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const [mountedAds, setMountedAds] = useState<Set<string>>(new Set());
 
-  // Get ad settings to check if ads are enabled
+  // Get ad settings to check if ads are enabled (public endpoint)
   const { data: adSettings } = useQuery({
-    queryKey: ["/api/admin/ad-settings"],
+    queryKey: ["/api/ad-settings"],
     refetchInterval: 30000, // Check every 30 seconds
   });
 
   const { data: ads = [] } = useQuery({
     queryKey: ["/api/advertisements"],
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-    enabled: !!adSettings?.enableAds, // Only fetch if ads are enabled
+    enabled: true, // Always try to fetch ads
   });
 
   // Filter ads for this position
@@ -55,61 +55,81 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
     // Execute ad scripts when component mounts or ads change
     limitedAds.forEach((ad: any) => {
       if (!mountedAds.has(ad.id)) {
+        console.log('Processing ad:', ad.name, 'Position:', ad.position);
+        
         try {
           // Mark as mounted immediately to prevent duplicate execution
           setMountedAds(prev => new Set([...prev, ad.id]));
 
           if (ad.adCode && ad.adCode.trim()) {
+            console.log('Ad code found for:', ad.name);
+            
             // Small delay to ensure DOM is ready
             setTimeout(() => {
               try {
-                if (ad.adCode.includes('<script')) {
-                    // Create a temporary div to parse the ad code
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = ad.adCode;
+                const adContainer = document.querySelector(`[data-ad-id="${ad.id}"]`);
+                if (!adContainer) {
+                  console.error('Ad container not found for:', ad.id);
+                  return;
+                }
 
-                    // Find the target ad container in the actual DOM
-                    const adContainer = document.querySelector(`[data-ad-id="${ad.id}"]`);
-                    if (adContainer) {
-                      // Add any non-script content to the container
-                      const nonScriptContent = tempDiv.innerHTML.replace(/<script[\s\S]*?<\/script>/gi, '');
-                      if (nonScriptContent.trim()) {
-                        adContainer.innerHTML = nonScriptContent;
-                      }
-                    }
+                // Create a temporary div to parse the ad code
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = ad.adCode;
 
-                    // Find and execute scripts
-                    const scripts = tempDiv.getElementsByTagName('script');
-                    Array.from(scripts).forEach((script, index) => {
+                // First, add all non-script content to the container
+                const nonScriptContent = ad.adCode.replace(/<script[\s\S]*?<\/script>/gi, '');
+                if (nonScriptContent.trim()) {
+                  adContainer.innerHTML = nonScriptContent;
+                }
+
+                // Then handle scripts separately
+                const scriptMatches = ad.adCode.match(/<script[\s\S]*?<\/script>/gi);
+                if (scriptMatches) {
+                  scriptMatches.forEach((scriptHtml, index) => {
+                    const tempScriptDiv = document.createElement('div');
+                    tempScriptDiv.innerHTML = scriptHtml;
+                    const script = tempScriptDiv.querySelector('script');
+                    
+                    if (script) {
+                      const newScript = document.createElement('script');
+                      
+                      // Copy all attributes
+                      Array.from(script.attributes).forEach(attr => {
+                        newScript.setAttribute(attr.name, attr.value);
+                      });
+                      
                       if (script.src) {
                         // External script
-                        const newScript = document.createElement('script');
-                        newScript.src = script.src;
-                        newScript.async = true;
-                        newScript.defer = true;
                         newScript.onload = () => console.log('Ad script loaded:', script.src);
-                        newScript.onerror = () => console.log('Ad script failed to load:', script.src);
-                        document.head.appendChild(newScript);
+                        newScript.onerror = () => console.error('Ad script failed to load:', script.src);
                       } else if (script.textContent && script.textContent.trim()) {
-                        // Inline script with error handling
-                        try {
-                          const newScript = document.createElement('script');
-                          newScript.textContent = script.textContent;
-                          newScript.id = `ad-script-${ad.id}-${index}`;
-                          document.body.appendChild(newScript);
-                        } catch (scriptError) {
-                          console.error('Error executing inline script:', scriptError);
-                        }
+                        // Inline script
+                        newScript.textContent = script.textContent;
                       }
-                    });
+                      
+                      newScript.id = `ad-script-${ad.id}-${index}`;
+                      
+                      // Append to document head for external scripts, body for inline
+                      if (script.src) {
+                        document.head.appendChild(newScript);
+                      } else {
+                        document.body.appendChild(newScript);
+                      }
+                    }
+                  });
                 }
+                
+                console.log('Ad processed successfully:', ad.name);
               } catch (error) {
-                console.error('Error processing ad code:', error);
+                console.error('Error processing ad code for', ad.name, ':', error);
               }
-            }, 100);
+            }, 200);
+          } else {
+            console.warn('No ad code found for:', ad.name);
           }
         } catch (error) {
-          console.error('Error executing ad script:', error);
+          console.error('Error executing ad script for', ad.name, ':', error);
         }
       }
     });
@@ -136,7 +156,6 @@ export function AdDisplay({ position, className = "" }: AdDisplayProps) {
           <div 
             className="ad-content"
             data-ad-id={ad.id}
-            dangerouslySetInnerHTML={{ __html: ad.adCode }}
             style={{
               width: '100%',
               height: '100%',
@@ -194,3 +213,6 @@ export function BlogAdDisplay({ position }: { position: "blog-top" | "blog-middl
     </div>
   );
 }
+
+// Default export for the main component
+export default AdDisplay;

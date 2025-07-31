@@ -355,10 +355,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const storage = await getStorage();
       const ads = await storage.getAdvertisements();
-      res.json(ads);
+      // Filter to only return active ads with required fields
+      const activeAds = ads.filter(ad => ad.isActive).map(ad => ({
+        id: ad.id,
+        name: ad.name,
+        adCode: ad.adCode,
+        width: ad.width,
+        height: ad.height,
+        position: ad.position,
+        isActive: ad.isActive
+      }));
+      res.json(activeAds);
     } catch (error) {
       console.error("Public ads fetch error:", error);
       res.status(500).json({ message: "Failed to fetch advertisements" });
+    }
+  });
+
+  // Public endpoint for ad settings (no authentication required)
+  app.get("/api/ad-settings", async (req, res) => {
+    try {
+      const storage = await getStorage();
+      const settings = await storage.getAdSettings();
+      // Only return public settings
+      res.json({
+        enableAds: settings?.enableAds || false,
+        adCount: settings?.adCount || "low"
+      });
+    } catch (error) {
+      console.error("Public ad settings fetch error:", error);
+      res.status(500).json({ message: "Failed to fetch ad settings" });
     }
   });
 
