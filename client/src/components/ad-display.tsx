@@ -1,13 +1,5 @@
-
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-
-// Extend window interface for AdSense
-declare global {
-  interface Window {
-    adsbygoogle?: any[];
-  }
-}
+import { useEffect } from "react";
 
 interface AdDisplayProps {
   position: "header" | "sidebar" | "content" | "footer" | "blog-top" | "blog-middle" | "blog-bottom" | "generator-top" | "generator-bottom";
@@ -31,23 +23,21 @@ interface Advertisement {
 }
 
 function AdDisplay({ position, className = "" }: AdDisplayProps) {
-  const [mountedAds, setMountedAds] = useState<Set<string>>(new Set());
-
   // Get ad settings from database
   const { data: adSettings } = useQuery<AdSettings>({
     queryKey: ["/api/admin/ad-settings"],
-    refetchInterval: 30000, // Check every 30 seconds
+    refetchInterval: 30000,
     retry: false,
-    staleTime: 60000, // Consider data fresh for 1 minute
+    staleTime: 60000,
   });
 
   // Get advertisements from database
   const { data: ads = [] } = useQuery<Advertisement[]>({
     queryKey: ["/api/advertisements"],
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
-    enabled: true, // Always try to fetch ads
-    retry: 3, // Retry 3 times on failure
-    staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    refetchInterval: 5 * 60 * 1000,
+    enabled: true,
+    retry: 3,
+    staleTime: 2 * 60 * 1000,
   });
 
   // Filter ads for this position that are active and have ad code
@@ -83,199 +73,71 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
     return counts[adCountLevel][position as keyof typeof counts.low] || 1;
   };
 
-  const limitedAds = (adSettings?.enableAds && positionAds.length > 0) ? 
+  const displayAds = (adSettings?.enableAds && positionAds.length > 0) ? 
     positionAds.slice(0, getMaxAdsForPosition()) : [];
 
+  // Execute external scripts after DOM is updated
   useEffect(() => {
-    // Clean up previously mounted ads
-    const adContainers = document.querySelectorAll(`[data-ad-position="${position}"]`);
-    adContainers.forEach(container => {
-      container.innerHTML = '';
-    });
-    
-    // Process new ads
-    limitedAds.forEach((ad: any, index: number) => {
-      if (!mountedAds.has(`${ad.id}-${index}`)) {
-        console.log('Processing ad:', ad.name, 'Position:', ad.position);
+    if (displayAds.length > 0) {
+      displayAds.forEach((ad, index) => {
+        // Find external script sources in the ad code
+        const scriptSrcMatches = ad.adCode.match(/src\s*=\s*["']([^"']+)["']/g);
         
-        try {
-          // Mark as mounted immediately to prevent duplicate execution
-          setMountedAds(prev => new Set([...Array.from(prev), `${ad.id}-${index}`]));
-
-          if (ad.adCode && ad.adCode.trim()) {
-            console.log('Ad code found for:', ad.name);
-            
-            // Small delay to ensure DOM is ready
-            setTimeout(() => {
-              try {
-                const adContainer = document.querySelector(`[data-ad-id="${ad.id}-${index}"]`);
-                if (!adContainer) {
-                  console.error('Ad container not found for:', ad.id);
-                  return;
-                }
-
-                // Clear container first
-                adContainer.innerHTML = '';
-
-                // Parse and inject the ad code
-                const parser = new DOMParser();
-                const adDoc = parser.parseFromString(ad.adCode, 'text/html');
-                
-                // Handle scripts separately
-                const scripts = adDoc.querySelectorAll('script');
-                const nonScriptContent = ad.adCode.replace(/<script[\s\S]*?<\/script>/gi, '');
-                
-                // Add non-script content first
-                if (nonScriptContent.trim()) {
-                  const tempDiv = document.createElement('div');
-                  tempDiv.innerHTML = nonScriptContent;
-                  while (tempDiv.firstChild) {
-                    adContainer.appendChild(tempDiv.firstChild);
-                  }
-                }
-
-                // Then handle scripts
-                scripts.forEach((script, scriptIndex) => {
-                  const newScript = document.createElement('script');
-                  
-                  // Copy all attributes
-                  Array.from(script.attributes).forEach(attr => {
-                    newScript.setAttribute(attr.name, attr.value);
-                  });
-                  
-                  if (script.src) {
-                    // External script
-                    newScript.onload = () => {
-                      console.log('External ad script loaded:', script.src);
-                      // Trigger any initialization functions if needed
-                      if (window.adsbygoogle && !newScript.hasAttribute('data-adsbygoogle-status')) {
-                        try {
-                          (window.adsbygoogle = window.adsbygoogle || []).push({});
-                        } catch (e) {
-                          console.log('AdSense push error:', e);
-                        }
-                      }
-                    };
-                    newScript.onerror = () => console.error('Ad script failed to load:', script.src);
-                    
-                    // Set unique ID and append to head
-                    newScript.id = `ad-script-${ad.id}-${index}-${scriptIndex}`;
-                    if (!document.getElementById(newScript.id)) {
-                      document.head.appendChild(newScript);
-                    }
-                  } else if (script.textContent && script.textContent.trim()) {
-                    // Inline script
-                    newScript.textContent = script.textContent;
-                    newScript.id = `ad-inline-script-${ad.id}-${index}-${scriptIndex}`;
-                    
-                    if (!document.getElementById(newScript.id)) {
-                      // Append inline scripts to the ad container or body
-                      adContainer.appendChild(newScript);
-                    }
-                  }
-                });
-                
-                console.log('Ad processed successfully:', ad.name);
-              } catch (error) {
-                console.error('Error processing ad code for', ad.name, ':', error);
-              }
-            }, 100 + (index * 50)); // Staggered loading
-          } else {
-            console.warn('No ad code found for:', ad.name);
-          }
-        } catch (error) {
-          console.error('Error executing ad script for', ad.name, ':', error);
+        if (scriptSrcMatches) {
+          scriptSrcMatches.forEach((srcMatch) => {
+            const src = srcMatch.match(/["']([^"']+)["']/)?.[1];
+            if (src && !document.querySelector(`script[src="${src}"]`)) {
+              const script = document.createElement('script');
+              script.src = src;
+              script.async = true;
+              script.onload = () => console.log('Ad script loaded:', src);
+              script.onerror = () => console.error('Ad script failed:', src);
+              document.head.appendChild(script);
+            }
+          });
         }
-      }
-    });
-  }, [limitedAds, position]);
+      });
+    }
+  }, [displayAds]);
 
-  // Don't show ads if they're disabled globally or no ads available
-  if (!adSettings?.enableAds || limitedAds.length === 0) {
+  // Don't render anything if ads are disabled
+  if (!adSettings?.enableAds) {
+    return null;
+  }
+
+  // Don't render if no ads for this position
+  if (displayAds.length === 0) {
     return null;
   }
 
   return (
-    <div className={`ad-container ad-position-${position} ${className}`} data-ad-position={position}>
-      {limitedAds.map((ad: any, index: number) => (
-        <div 
-          key={`${ad.id}-${index}`}
-          className="ad-wrapper mb-4"
-          style={{
-            width: ad.width ? `${ad.width}px` : 'auto',
-            height: ad.height ? `${ad.height}px` : 'auto',
-            maxWidth: '100%',
-            margin: '1rem auto',
-            minHeight: '90px'
-          }}
-        >
-          <div 
-            className="ad-content"
-            data-ad-id={`${ad.id}-${index}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              overflow: 'hidden'
-            }}
-          />
-          {adSettings?.showAdLabels !== false && (
-            <div className="ad-label text-xs text-gray-400 text-center mt-1">
-              Advertisement
-            </div>
-          )}
+    <div className={`ad-container ${className}`}>
+      {adSettings.showAdLabels && (
+        <div className="text-xs text-muted-foreground mb-2 text-center">
+          Advertisement
         </div>
-      ))}
+      )}
+      
+      <div className="space-y-4">
+        {displayAds.map((ad, index) => (
+          <div
+            key={`${ad.id}-${index}`}
+            className="ad-slot"
+            style={{
+              minHeight: ad.height ? `${ad.height}px` : '50px',
+              width: ad.width ? `${ad.width}px` : '100%',
+              maxWidth: '100%'
+            }}
+            dangerouslySetInnerHTML={{ __html: ad.adCode }}
+          />
+        ))}
+      </div>
     </div>
   );
 }
 
-// Helper component for responsive ad placement
-export function ResponsiveAdDisplay({ position, className = "" }: AdDisplayProps) {
-  return (
-    <div className={`responsive-ad-wrapper flex justify-center items-center my-4 ${className}`}>
-      <style dangerouslySetInnerHTML={{
-        __html: `
-          .responsive-ad-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 1rem 0;
-          }
+// Create BlogAdDisplay as an alias for AdDisplay
+export const BlogAdDisplay = AdDisplay;
 
-          @media (max-width: 768px) {
-            .responsive-ad-wrapper {
-              margin: 0.5rem 0;
-            }
-
-            .responsive-ad-wrapper .ad-wrapper {
-              transform: scale(0.9);
-              transform-origin: center;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .responsive-ad-wrapper .ad-wrapper {
-              transform: scale(0.8);
-            }
-          }
-        `
-      }} />
-      <AdDisplay position={position} />
-    </div>
-  );
-}
-
-// Blog-specific ad component
-export function BlogAdDisplay({ position }: { position: "blog-top" | "blog-middle" | "blog-bottom" }) {
-  return (
-    <div className="blog-ad-section my-8">
-      <AdDisplay position={position} className="flex justify-center" />
-    </div>
-  );
-}
-
-// Named export for the main component
 export { AdDisplay };
-
-// Default export for the main component
 export default AdDisplay;
