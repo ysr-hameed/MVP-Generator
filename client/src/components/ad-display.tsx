@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface AdDisplayProps {
   position: "header" | "sidebar" | "content" | "footer" | "blog-top" | "blog-middle" | "blog-bottom" | "generator-top" | "generator-bottom";
@@ -23,6 +23,8 @@ interface Advertisement {
 }
 
 function AdDisplay({ position, className = "" }: AdDisplayProps) {
+  const adContainerRef = useRef<HTMLDivElement>(null);
+
   // Get ad settings from database
   const { data: adSettings } = useQuery<AdSettings>({
     queryKey: ["/api/admin/ad-settings"],
@@ -76,60 +78,55 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
   const displayAds = (adSettings?.enableAds && positionAds.length > 0) ? 
     positionAds.slice(0, getMaxAdsForPosition()) : [];
 
-  // Execute scripts after DOM is updated
+  // Simple direct injection approach
   useEffect(() => {
-    if (displayAds.length > 0) {
+    if (displayAds.length > 0 && adContainerRef.current) {
+      const container = adContainerRef.current;
+      
       displayAds.forEach((ad, index) => {
-        const containerId = `ad-container-${ad.id}-${index}`;
-        const container = document.getElementById(containerId);
+        // Create a unique container for each ad
+        const adWrapper = document.createElement('div');
+        adWrapper.id = `ad-${ad.id}-${index}`;
+        adWrapper.style.width = ad.width ? `${ad.width}px` : '320px';
+        adWrapper.style.height = ad.height ? `${ad.height}px` : '50px';
+        adWrapper.style.margin = '8px auto';
+        adWrapper.style.border = '1px solid #ddd';
+        adWrapper.style.borderRadius = '4px';
+        adWrapper.style.padding = '4px';
+        adWrapper.style.backgroundColor = '#fff';
+        adWrapper.style.position = 'relative';
+        adWrapper.style.overflow = 'hidden';
         
-        if (container && ad.adCode) {
-          // Clear previous content
-          container.innerHTML = '';
+        // Inject the raw ad code directly
+        adWrapper.innerHTML = ad.adCode;
+        
+        // Append to container
+        container.appendChild(adWrapper);
+        
+        // Execute scripts manually after DOM injection
+        const scripts = adWrapper.querySelectorAll('script');
+        scripts.forEach((oldScript) => {
+          const newScript = document.createElement('script');
           
-          // Create a temporary div to parse the ad code
-          const tempDiv = document.createElement('div');
-          tempDiv.innerHTML = ad.adCode;
-          
-          // Handle inline scripts first
-          const inlineScripts = tempDiv.querySelectorAll('script:not([src])');
-          inlineScripts.forEach((script, scriptIndex) => {
-            if (script.textContent && script.textContent.trim()) {
-              try {
-                // Execute inline script content
-                const scriptContent = script.textContent;
-                console.log('Executing inline ad script:', scriptContent.substring(0, 100) + '...');
-                
-                // Use Function constructor to execute script safely
-                const executeScript = new Function(scriptContent);
-                executeScript();
-              } catch (error) {
-                console.error('Error executing inline ad script:', error);
-              }
-            }
-          });
-          
-          // Handle external scripts
-          const externalScripts = tempDiv.querySelectorAll('script[src]');
-          externalScripts.forEach((script, scriptIndex) => {
-            const src = script.getAttribute('src');
-            if (src && !document.querySelector(`script[src="${src}"]`)) {
-              const newScript = document.createElement('script');
-              newScript.src = src;
-              newScript.async = true;
-              newScript.type = 'text/javascript';
-              newScript.onload = () => console.log('External ad script loaded:', src);
-              newScript.onerror = () => console.error('External ad script failed:', src);
-              document.head.appendChild(newScript);
-            }
-          });
-          
-          // Add non-script content to container
-          const nonScriptContent = ad.adCode.replace(/<script[\s\S]*?<\/script>/gi, '');
-          if (nonScriptContent.trim()) {
-            container.innerHTML = nonScriptContent;
+          if (oldScript.src) {
+            // External script
+            newScript.src = oldScript.src.startsWith('//') ? `https:${oldScript.src}` : oldScript.src;
+            newScript.async = true;
+            newScript.onload = () => console.log('Ad script loaded:', newScript.src);
+            newScript.onerror = () => console.error('Ad script failed:', newScript.src);
+            document.head.appendChild(newScript);
+          } else if (oldScript.textContent) {
+            // Inline script
+            newScript.textContent = oldScript.textContent;
+            console.log('Executing ad script:', oldScript.textContent.substring(0, 50) + '...');
+            document.head.appendChild(newScript);
           }
-        }
+          
+          // Remove the old script tag from the ad container
+          oldScript.remove();
+        });
+        
+        console.log(`Ad injected: ${ad.name} at position ${position}`);
       });
     }
   }, [displayAds]);
@@ -152,21 +149,11 @@ function AdDisplay({ position, className = "" }: AdDisplayProps) {
         </div>
       )}
       
-      <div className="space-y-4">
-        {displayAds.map((ad, index) => (
-          <div
-            key={`${ad.id}-${index}`}
-            id={`ad-container-${ad.id}-${index}`}
-            className="ad-slot"
-            style={{
-              minHeight: ad.height ? `${ad.height}px` : '50px',
-              width: ad.width ? `${ad.width}px` : '100%',
-              maxWidth: '100%',
-              overflow: 'hidden'
-            }}
-          />
-        ))}
-      </div>
+      <div 
+        ref={adContainerRef}
+        className="space-y-2"
+        style={{ minHeight: '60px' }}
+      />
     </div>
   );
 }
