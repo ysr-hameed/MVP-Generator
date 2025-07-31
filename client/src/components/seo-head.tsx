@@ -1,175 +1,68 @@
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 
 interface SEOHeadProps {
   title?: string;
   description?: string;
   keywords?: string;
-  ogTitle?: string;
-  ogDescription?: string;
-  ogImage?: string;
-  twitterTitle?: string;
-  twitterDescription?: string;
-  twitterImage?: string;
-  canonical?: string;
-  structuredData?: object;
-  noindex?: boolean;
-  author?: string;
-  publishedTime?: string;
-  modifiedTime?: string;
-  articleTags?: string[];
-  lang?: string;
+  image?: string;
+  url?: string;
 }
 
-export default function SEOHead({
-  title,
-  description,
-  keywords = "MVP, startup, business plan, AI generator, tech stack, entrepreneur",
-  ogTitle,
-  ogDescription,
-  ogImage = "/og-image.jpg",
-  twitterTitle,
-  twitterDescription, 
-  twitterImage,
-  canonical,
-  structuredData,
-  noindex = false,
-  author = "MVP Generator AI Team",
-  publishedTime,
-  modifiedTime,
-  articleTags = [],
-  lang = "en"
+export function SEOHead({ 
+  title = "MVP Generator AI - Turn Ideas into Actionable Business Plans",
+  description = "Generate comprehensive MVP plans using AI. Get detailed roadmaps, technical requirements, and business strategies for your startup idea.",
+  keywords = "MVP generator, startup ideas, business plan, AI planning, startup roadmap",
+  image = "/og-image.jpg",
+  url = "https://mvpgenerator.ai"
 }: SEOHeadProps) {
   useEffect(() => {
-    // Set document title
-   const { data: siteSettings } = useQuery({
-    queryKey: ["/api/site-settings"],
-    staleTime: 5 * 60 * 1000,
-  });
+    // Update document title
+    document.title = title;
 
-  const siteName = siteSettings?.siteName || "MVP Generator AI";
-  const siteDescription = siteSettings?.siteDescription || "AI-powered tool that transforms startup ideas into comprehensive MVP plans with tech stacks, features, and roadmaps.";
-
-  const finalTitle = title || `${siteName} - Transform Ideas into Startup Plans`;
-  const finalDescription = description || siteDescription;
-    document.title = finalTitle;
-
-    // Set language
-    document.documentElement.lang = lang;
-
-    // Helper function to set meta tag
-    const setMetaTag = (name: string, content: string, property?: boolean) => {
-      const selector = property ? `meta[property="${name}"]` : `meta[name="${name}"]`;
-      let meta = document.querySelector(selector) as HTMLMetaElement;
-      if (!meta) {
-        meta = document.createElement("meta");
-        if (property) {
-          meta.setAttribute("property", name);
-        } else {
-          meta.setAttribute("name", name);
-        }
-        document.head.appendChild(meta);
+    // Update meta tags
+    const updateMetaTag = (property: string, content: string) => {
+      let element = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement;
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute('property', property);
+        document.head.appendChild(element);
       }
-      meta.content = content;
+      element.content = content;
+    };
+
+    const updateMetaName = (name: string, content: string) => {
+      let element = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement;
+      if (!element) {
+        element = document.createElement('meta');
+        element.setAttribute('name', name);
+        document.head.appendChild(element);
+      }
+      element.content = content;
     };
 
     // Basic meta tags
-    setMetaTag("description", finalDescription);
-    setMetaTag("keywords", keywords);
-    setMetaTag("author", author);
-    setMetaTag("robots", noindex ? "noindex, nofollow" : "index, follow");
-    setMetaTag("viewport", "width=device-width, initial-scale=1.0");
+    updateMetaName('description', description);
+    updateMetaName('keywords', keywords);
 
     // Open Graph tags
-    setMetaTag("og:title", ogTitle || finalTitle, true);
-    setMetaTag("og:description", ogDescription || finalDescription, true);
-    setMetaTag("og:image", ogImage, true);
-    setMetaTag("og:type", publishedTime ? "article" : "website", true);
-    setMetaTag("og:url", window.location.href, true);
-    setMetaTag("og:site_name", siteName, true);
+    updateMetaTag('og:title', title);
+    updateMetaTag('og:description', description);
+    updateMetaTag('og:image', image);
+    updateMetaTag('og:url', url);
+    updateMetaTag('og:type', 'website');
 
     // Twitter Card tags
-    setMetaTag("twitter:card", "summary_large_image");
-    setMetaTag("twitter:title", twitterTitle || ogTitle || finalTitle);
-    setMetaTag("twitter:description", twitterDescription || ogDescription || finalDescription);
-    setMetaTag("twitter:image", twitterImage || ogImage);
-    setMetaTag("twitter:site", "@mvpgeneratorai");
+    updateMetaName('twitter:card', 'summary_large_image');
+    updateMetaName('twitter:title', title);
+    updateMetaName('twitter:description', description);
+    updateMetaName('twitter:image', image);
 
-    // Article specific tags
-    if (publishedTime) {
-      setMetaTag("article:published_time", publishedTime, true);
-      setMetaTag("article:author", author, true);
-    }
+    // Additional SEO tags
+    updateMetaName('robots', 'index, follow');
+    updateMetaName('author', 'MVP Generator AI');
+    updateMetaTag('og:site_name', 'MVP Generator AI');
 
-    if (modifiedTime) {
-      setMetaTag("article:modified_time", modifiedTime, true);
-    }
-
-    // Article tags
-    articleTags.forEach(tag => {
-      const meta = document.createElement("meta");
-      meta.setAttribute("property", "article:tag");
-      meta.content = tag;
-      document.head.appendChild(meta);
-    });
-
-    // Canonical URL
-    if (canonical) {
-      let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
-      if (!canonicalLink) {
-        canonicalLink = document.createElement("link");
-        canonicalLink.rel = "canonical";
-        document.head.appendChild(canonicalLink);
-      }
-      canonicalLink.href = canonical;
-    }
-
-    // Structured data
-    if (structuredData) {
-      let scriptTag = document.querySelector('script[type="application/ld+json"]');
-      if (!scriptTag) {
-        scriptTag = document.createElement("script");
-        (scriptTag as HTMLScriptElement).type = "application/ld+json";
-        document.head.appendChild(scriptTag);
-      }
-      scriptTag.textContent = JSON.stringify(structuredData);
-    }
-
-    // Auto-submit to search engines for indexing
-    if (!noindex && typeof window !== 'undefined') {
-      // Submit to IndexNow for instant indexing
-      const submitToIndexNow = async () => {
-        try {
-          // Get IndexNow key from environment or use site setting
-          const response = await fetch('/api/site-settings');
-          const settings = await response.json();
-          const indexNowKey = settings?.indexNowKey || import.meta.env.VITE_INDEXNOW_KEY;
-
-          if (!indexNowKey) {
-            console.log('IndexNow key not configured, skipping submission');
-            return;
-          }
-
-          const url = window.location.href;
-
-          // Use POST method with proper headers
-          await fetch('/api/indexnow/submit', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ url, key: indexNowKey })
-          });
-        } catch (error) {
-          // Silent fail for SEO functionality
-          console.log('IndexNow submission failed:', error);
-        }
-      };
-
-      // Submit after page load to avoid blocking
-      setTimeout(submitToIndexNow, 3000);
-    }
-  }, [title, description, keywords, ogTitle, ogDescription, ogImage, twitterTitle, twitterDescription, twitterImage, canonical, structuredData, noindex, author, publishedTime, modifiedTime, articleTags, lang]);
+  }, [title, description, keywords, image, url]);
 
   return null;
 }

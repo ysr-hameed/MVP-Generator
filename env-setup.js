@@ -33,13 +33,11 @@ if (!envLoaded) {
 }
 
 // Set fallback database URL if not provided
-if (!process.env.DATABASE_URL) {
-  console.warn("DATABASE_URL not found in environment variables");
-  // Only set fallback in development
-  if (process.env.NODE_ENV !== 'production') {
-    process.env.DATABASE_URL = "postgresql://startnet_owner:npg_p9tQNLovjW0w@ep-still-sun-a87eo2bi-pooler.eastus2.azure.neon.tech/startnet?sslmode=require&channel_binding=require";
-    console.log("Using fallback DATABASE_URL for development");
-  }
+if (!process.env.DATABASE_URL || process.env.DATABASE_URL === 'your-postgresql-connection-string-here') {
+  console.warn("DATABASE_URL not found or using placeholder value");
+  // Set fallback database URL
+  process.env.DATABASE_URL = "postgresql://startnet_owner:npg_p9tQNLovjW0w@ep-still-sun-a87eo2bi-pooler.eastus2.azure.neon.tech/startnet?sslmode=require&channel_binding=require";
+  console.log("Using fallback DATABASE_URL");
 }
 
 console.log("Environment variables loaded");

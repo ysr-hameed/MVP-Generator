@@ -10,12 +10,12 @@ import { cronJobService } from "./services/cronJobs";
 import { ApiKeyManager } from "./services/apiKeyManager";
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 5000;
 
-// CORS configuration for separate backend hosting
+// CORS configuration for Replit hosting
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] // Replace with actual frontend domain
+    ? [process.env.SITE_URL, process.env.FRONTEND_URL].filter(Boolean)
     : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -45,7 +45,6 @@ async function main() {
     serveStatic(app);
   }
 
-  const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
   server.listen(PORT, "0.0.0.0", () => {
     const mode = process.env.NODE_ENV === "development" ? " (development mode with Vite)" : "";
     console.log(`Server running on port ${PORT}${mode}`);
