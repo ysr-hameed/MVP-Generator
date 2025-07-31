@@ -1,44 +1,47 @@
 // Load environment variables first
 import "../env-setup.js";
 
-import express from "express";
+import express, { Application } from "express";
 import cors from "cors";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic } from "./vite";
 import { initializeDatabase } from "./db";
 import { cronJobService } from "./services/cronJobs";
 import { ApiKeyManager } from "./services/apiKeyManager";
+import http from "http";
 
-const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT) : 5000;
+const app: Application = express();
+const PORT: number = parseInt(process.env.PORT || "5000", 10);
 
-// CORS configuration for Replit hosting
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.SITE_URL, process.env.FRONTEND_URL].filter(Boolean)
-    : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5000'],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
+// CORS configuration
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === "production"
+        ? [process.env.SITE_URL, process.env.FRONTEND_URL].filter(Boolean)
+        : ["http://localhost:3000", "http://localhost:5173", "http://localhost:5000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  })
+);
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 async function main() {
-  // Initialize database first
   try {
-    console.log("Initializing database...");
+    console.log("🔌 Initializing database...");
     await initializeDatabase();
-    console.log("Database initialized successfully");
+    console.log("✅ Database initialized");
   } catch (error) {
-    console.error("Database initialization failed:", error);
+    console.error("❌ Database initialization failed:", error);
     process.exit(1);
   }
 
-  const server = await registerRoutes(app);
+  const server: http.Server = await registerRoutes(app);
 
-  // Setup Vite middleware for development or static serving for production
+  // Serve frontend via Vite (dev) or static (prod)
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
@@ -46,22 +49,25 @@ async function main() {
   }
 
   server.listen(PORT, "0.0.0.0", () => {
-    const mode = process.env.NODE_ENV === "development" ? " (development mode with Vite)" : "";
-    console.log(`Server running on port ${PORT}${mode}`);
+    const mode = process.env.NODE_ENV === "development" ? " (dev mode + Vite)" : "";
+    console.log(`🚀 Server listening on port ${PORT}${mode}`);
 
-    // Initialize API keys and start cron jobs after server is running
+    // Delay service startup
     setTimeout(async () => {
       try {
-        console.log("Starting cron job service...");
+        console.log("⚙️ Starting background services...");
         await ApiKeyManager.initialize();
         await ApiKeyManager.resetDailyUsage();
         cronJobService.start();
-        console.log("Cron job service started");
+        console.log("✅ Background services running");
       } catch (error) {
-        console.error("Failed to initialize services:", error);
+        console.error("❌ Service initialization error:", error);
       }
     }, 2000);
   });
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error("❌ Fatal startup error:", err);
+  process.exit(1);
+});
